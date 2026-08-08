@@ -1,0 +1,23 @@
+local Tox = getgenv().Tox
+local Page = Tox.Pages["VISUALS"]
+local Settings = Tox.Settings
+local Services = Tox.Services
+
+Tox.UI.CreateToggle("Ativar ESP", Page, Settings.ESP, function(v)
+    Settings.ESP = v
+end)
+
+Tox.UI.CreateToggle("Chams / Highlight", Page, Settings.Chams, function(v)
+    Settings.Chams = v
+end)
+
+Tox.UI.CreateToggle("Fullbright", Page, Settings.Fullbright, function(v)
+    Settings.Fullbright = v
+    if v then
+        Services.Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Services.Lighting.Brightness = 2
+    else
+        Services.Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+        Services.Lighting.Brightness = 1
+    end
+end)
