@@ -1,8 +1,3 @@
---- START OF FILE text/plain ---
-
---==================================================
--- TOX V1 UTILITY GUI (COLOR #090088 + AUTO SAVE CONFIG)
---==================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -22,11 +17,8 @@ local Camera = workspace.CurrentCamera
 getgenv().FPDH = workspace.FallenPartsDestroyHeight or -500
 
 local LOGO_ID = "rbxassetid://120675082996894"
-local MAIN_COLOR = Color3.fromRGB(9, 0, 136) -- Exact Hex #090088
+local MAIN_COLOR = Color3.fromRGB(9, 0, 136) 
 
---==================================================
--- SETTINGS
---==================================================
 
 local ColorMap = {
 	["White"] = Color3.fromRGB(255, 255, 255),
@@ -91,12 +83,12 @@ local Settings = {
 
 	GUIKeybind = Enum.KeyCode.LeftAlt,
 
-    -- Music Settings
+
     MusicAutoPlay = false,
     MusicLoop = false
 }
 
-local SavedIDs = {} -- Formato: { {id = "12345", name = "Musica 1"} }
+local SavedIDs = {} 
 local CurrentTrackIndex = 1
 
 local Character
@@ -114,9 +106,6 @@ local OriginalLighting = {
     GlobalShadows = Lighting.GlobalShadows
 }
 
---==================================================
--- SAVE / LOAD AUTOMATIC ENGINE
---==================================================
 
 local FolderName = "ToxV1_Data"
 local ConfigFilePath = FolderName .. "/config.json"
@@ -182,7 +171,7 @@ local function AutoSaveConfiguration()
     end)
 end
 
-local RenderSavedIDs -- Forward declaration
+local RenderSavedIDs 
 
 local function LoadConfiguration()
     if not isfile or not readfile or not isfile(ConfigFilePath) then return end
@@ -211,9 +200,6 @@ end
 
 LoadConfiguration()
 
---==================================================
--- NOTIFICATION SYSTEM
---==================================================
 
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "ToxNotifs"
@@ -291,9 +277,6 @@ Players.PlayerRemoving:Connect(function(p)
     CustomNotify(p.DisplayName .. " left", Color3.fromRGB(255, 100, 100))
 end)
 
---==================================================
--- CHARACTER
---==================================================
 
 local function UpdateCharacter()
 	if Destroyed then return end
@@ -304,9 +287,6 @@ end
 
 UpdateCharacter()
 
---==================================================
--- GUI BASE
---==================================================
 
 local ParentContainer
 pcall(function()
@@ -474,7 +454,7 @@ local function CreatePage(Name)
 	return Page, Layout
 end
 
--- TAB ORDER: COMBAT, PLAYER, VISUALS, MISC, SCRIPTS, CONFIG
+
 local CombatPage, CombatLayout = CreatePage("COMBAT")
 local PlayerPage, PlayerLayout = CreatePage("PLAYER")
 local VisualsPage, VisualsLayout = CreatePage("VISUALS")
