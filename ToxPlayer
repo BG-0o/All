@@ -1,0 +1,31 @@
+local Tox = getgenv().Tox
+local Page = Tox.Pages["PLAYER"]
+local Settings = Tox.Settings
+local Services = Tox.Services
+local Player = Tox.Player
+
+Tox.UI.CreateToggle("Velocidade (Speed)", Page, Settings.Speed, function(v)
+    Settings.Speed = v
+    if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+        Player.Character.Humanoid.WalkSpeed = v and Settings.SpeedValue or 16
+    end
+end)
+
+Tox.UI.CreateToggle("Pulo Alto (Jump)", Page, Settings.Jump, function(v)
+    Settings.Jump = v
+    if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+        Player.Character.Humanoid.JumpPower = v and Settings.JumpValue or 50
+    end
+end)
+
+Tox.UI.CreateToggle("Noclip", Page, Settings.Noclip, function(v)
+    Settings.Noclip = v
+end)
+
+Services.RunService.Stepped:Connect(function()
+    if Settings.Noclip and Player.Character then
+        for _, part in ipairs(Player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+end)
