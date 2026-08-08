@@ -1,16 +1,9 @@
---[[
-	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
-]]
--- Services
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
----------------------------------------------------------
--- 1. MAIN SCREEN GUI & TOGGLE BUTTON
----------------------------------------------------------
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "BundleAnimationsGui"
 screenGui.ResetOnSpawn = false
@@ -31,9 +24,6 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleBtn
 
----------------------------------------------------------
--- 2. MAIN FRAME (DESAIN DARK THEME)
----------------------------------------------------------
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 440, 0, 320)
@@ -96,9 +86,6 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 6)
 closeCorner.Parent = closeBtn
 
----------------------------------------------------------
--- 3. SCROLLING CONTAINER
----------------------------------------------------------
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Size = UDim2.new(1, -20, 1, -55)
 scrollFrame.Position = UDim2.new(0, 10, 0, 45)
@@ -113,9 +100,6 @@ listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Padding = UDim.new(0, 8)
 listLayout.Parent = scrollFrame
 
----------------------------------------------------------
--- 4. LOGIKA ANIMASI & TOGGLE STATE
----------------------------------------------------------
 local animList = {"Idle", "Walk", "Run", "Jump", "Fall"}
 local savedCustomIds = {}
 local defaultAnimIds = {}
@@ -319,9 +303,6 @@ for index, name in ipairs(animList) do
 	createAnimRow(name, index)
 end
 
----------------------------------------------------------
--- 5. DRAGGABLE & TOGGLE MAIN WINDOW
----------------------------------------------------------
 local dragging, dragStart, startPos
 
 mainFrame.InputBegan:Connect(function(input)
