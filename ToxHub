@@ -1,0 +1,312 @@
+getgenv().Tox = {
+    Services = {
+        Players = game:GetService("Players"),
+        UserInputService = game:GetService("UserInputService"),
+        RunService = game:GetService("RunService"),
+        TeleportService = game:GetService("TeleportService"),
+        VirtualUser = game:GetService("VirtualUser"),
+        StarterGui = game:GetService("StarterGui"),
+        Lighting = game:GetService("Lighting"),
+        SoundService = game:GetService("SoundService"),
+        TextChatService = game:GetService("TextChatService"),
+        TweenService = game:GetService("TweenService"),
+        HttpService = game:GetService("HttpService")
+    },
+    ColorMap = {
+        ["White"] = Color3.fromRGB(255, 255, 255),
+        ["Red"] = Color3.fromRGB(255, 50, 50),
+        ["Green"] = Color3.fromRGB(50, 255, 50),
+        ["Blue"] = Color3.fromRGB(50, 150, 255),
+        ["Yellow"] = Color3.fromRGB(255, 255, 50),
+        ["Cyan"] = Color3.fromRGB(50, 255, 255),
+        ["Magenta"] = Color3.fromRGB(255, 50, 255),
+        ["Orange"] = Color3.fromRGB(255, 150, 50),
+        ["Purple"] = Color3.fromRGB(150, 50, 255)
+    },
+    Settings = {
+        Noclip = false, InfiniteJump = false, Speed = false, Jump = false,
+        Fly = false, FlyCar = false, NoFallDamage = false, AntiVoid = false,
+        AntiFling = true, CtrlClickTP = false, Float = false, AntiAFK = true,
+        ChatLogs = false, Render3D = true, Freecam = false, Fullbright = false,
+        FOVEnabled = false, FOVValue = 70, Spectating = false, LoopTP = false,
+        SpeedValue = 16, JumpValue = 50, FlySpeed = 5, FlyCarSpeed = 5, FloatStrength = 7,
+        UpBind = Enum.KeyCode.E, DownBind = Enum.KeyCode.Q,
+        ESP = false, EspColorName = "White", EspColor = Color3.fromRGB(255, 255, 255),
+        EspSize = 13, ShowHealth = false, NameType = "Display", Chams = false,
+        OutlineColor = Color3.fromRGB(255, 255, 255), OutlineOpacity = 0.5,
+        ChamOpacity = 0.75, ShowTeamColor = false, DisableTeam = false,
+        GUIKeybind = Enum.KeyCode.LeftAlt, MusicAutoPlay = false, MusicLoop = false
+    },
+    SavedIDs = {},
+    CurrentTrackIndex = 1,
+    Destroyed = false,
+    Pages = {},
+    UI = {}
+}
+
+local Tox = getgenv().Tox
+local Services = Tox.Services
+local Player = Services.Players.LocalPlayer
+Tox.Player = Player
+Tox.MAIN_COLOR = Color3.fromRGB(9, 0, 136)
+Tox.LOGO_ID = "rbxassetid://120675082996894"
+
+-- Sistema de Configuração
+local FolderName = "ToxV1_Data"
+local ConfigFilePath = FolderName .. "/config.json"
+
+function Tox.AutoSaveConfiguration()
+    if Tox.Destroyed or not writefile then return end
+    pcall(function()
+        if makefolder and isfolder and not isfolder(FolderName) then makefolder(FolderName) end
+        local data = { Settings = Tox.Settings, SavedIDs = Tox.SavedIDs }
+        writefile(ConfigFilePath, Services.HttpService:JSONEncode(data))
+    end)
+end
+
+function Tox.LoadConfiguration()
+    if not isfile or not readfile or not isfile(ConfigFilePath) then return end
+    pcall(function()
+        local data = Services.HttpService:JSONDecode(readfile(ConfigFilePath))
+        if data and data.Settings then
+            for k, v in pairs(data.Settings) do
+                if k == "GUIKeybind" then pcall(function() Tox.Settings.GUIKeybind = Enum.KeyCode[v] end)
+                else Tox.Settings[k] = v end
+            end
+        end
+        if data and data.SavedIDs then Tox.SavedIDs = data.SavedIDs end
+    end)
+end
+Tox.LoadConfiguration()
+
+-- Notificações
+local NotifGui = Instance.new("ScreenGui")
+NotifGui.Name = "ToxNotifs"
+NotifGui.DisplayOrder = 999
+NotifGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+Tox.NotifGui = NotifGui
+
+local NotifContainer = Instance.new("Frame")
+NotifContainer.Size = UDim2.new(0, 240, 1, -40)
+NotifContainer.Position = UDim2.new(1, -250, 0, 20)
+NotifContainer.BackgroundTransparency = 1
+NotifContainer.Parent = NotifGui
+
+local NotifLayout = Instance.new("UIListLayout")
+NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+NotifLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+NotifLayout.Padding = UDim.new(0, 6)
+NotifLayout.Parent = NotifContainer
+
+function Tox.CustomNotify(text, color)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, 0, 0, 38)
+    Frame.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
+    Frame.BorderSizePixel = 0
+    Frame.ClipsDescendants = true
+    Frame.Parent = NotifContainer
+    
+    local Corner = Instance.new("UICorner") Corner.CornerRadius = UDim.new(0, 6) Corner.Parent = Frame
+    local Stroke = Instance.new("UIStroke") Stroke.Color = Tox.MAIN_COLOR Stroke.Thickness = 1.5 Stroke.Parent = Frame
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -16, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = color or Color3.fromRGB(240, 240, 240)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
+
+    Services.TweenService:Create(Frame, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+    task.delay(3.5, function()
+        local t = Services.TweenService:Create(Frame, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+        t:Play()
+        t.Completed:Connect(function() Frame:Destroy() end)
+    end)
+end
+
+-- GUI Principal
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "ToxV1Gui"
+Gui.ResetOnSpawn = false
+Gui.DisplayOrder = 999999999
+Gui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+Tox.Gui = Gui
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 0, 0, 0)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+Main.BorderSizePixel = 0
+Main.ClipsDescendants = true
+Main.Visible = false
+Main.Parent = Gui
+Tox.Main = Main
+
+local MainCorner = Instance.new("UICorner") MainCorner.CornerRadius = UDim.new(0, 8) MainCorner.Parent = Main
+local MainStroke = Instance.new("UIStroke") MainStroke.Color = Tox.MAIN_COLOR MainStroke.Thickness = 2 MainStroke.Parent = Main
+
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 38)
+TopBar.BackgroundColor3 = Tox.MAIN_COLOR
+TopBar.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -70, 1, 0)
+Title.Position = UDim2.new(0, 34, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Tox v1"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 15
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+local Tabs = Instance.new("ScrollingFrame")
+Tabs.Size = UDim2.new(1, -10, 0, 34)
+Tabs.Position = UDim2.new(0, 5, 0, 44)
+Tabs.BackgroundTransparency = 1
+Tabs.ScrollBarThickness = 2
+Tabs.Parent = Main
+
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.Padding = UDim.new(0, 4)
+TabLayout.Parent = Tabs
+
+local function CreatePage(Name)
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = Name
+    Page.Size = UDim2.new(1, -16, 1, -88)
+    Page.Position = UDim2.new(0, 8, 0, 84)
+    Page.BackgroundTransparency = 1
+    Page.ScrollBarThickness = 4
+    Page.Visible = false
+    Page.Parent = Main
+
+    local Layout = Instance.new("UIListLayout")
+    Layout.Padding = UDim.new(0, 6)
+    Layout.Parent = Page
+
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 15)
+    end)
+
+    Tox.Pages[Name] = Page
+    return Page
+end
+
+local function CreateTab(Name, Page)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0, 75, 0, 28)
+    Button.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+    Button.Text = Name
+    Button.TextColor3 = Color3.fromRGB(170, 170, 185)
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 11
+    Button.Parent = Tabs
+
+    local Corner = Instance.new("UICorner") Corner.CornerRadius = UDim.new(0, 4) Corner.Parent = Button
+
+    Button.MouseButton1Click:Connect(function()
+        for _, P in pairs(Tox.Pages) do P.Visible = false end
+        Page.Visible = true
+        for _, B in ipairs(Tabs:GetChildren()) do
+            if B:IsA("TextButton") then
+                B.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+                B.TextColor3 = Color3.fromRGB(170, 170, 185)
+            end
+        end
+        Button.BackgroundColor3 = Tox.MAIN_COLOR
+        Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+    return Button
+end
+
+-- Criar Páginas/Abas
+local PlayerPage = CreatePage("PLAYER")
+local VisualsPage = CreatePage("VISUALS")
+local MiscPage = CreatePage("MISC")
+local ScriptsPage = CreatePage("SCRIPTS")
+local ConfigPage = CreatePage("CONFIG")
+
+local PlayerTab = CreateTab("PLAYER", PlayerPage)
+local VisualsTab = CreateTab("VISUALS", VisualsPage)
+local MiscTab = CreateTab("MISC", MiscPage)
+local ScriptsTab = CreateTab("SCRIPTS", ScriptsPage)
+local ConfigTab = CreateTab("CONFIG", ConfigPage)
+
+PlayerPage.Visible = true
+PlayerTab.BackgroundColor3 = Tox.MAIN_COLOR
+PlayerTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Criadores de UI genéricos para as Abas usarem
+function Tox.UI.CreateToggle(Name, Page, DefaultValue, Callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, -5, 0, 39)
+    Button.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+    Button.Text = ""
+    Button.Parent = Page
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -65, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Name
+    Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Button
+
+    local Toggle = Instance.new("Frame")
+    Toggle.Size = UDim2.new(0, 38, 0, 20)
+    Toggle.Position = UDim2.new(1, -48, 0.5, -10)
+    Toggle.BackgroundColor3 = DefaultValue and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+    Toggle.Parent = Button
+    
+    local ToggleCorner = Instance.new("UICorner") ToggleCorner.CornerRadius = UDim.new(0, 4) ToggleCorner.Parent = Toggle
+
+    local Enabled = DefaultValue or false
+    Button.MouseButton1Click:Connect(function()
+        Enabled = not Enabled
+        Toggle.BackgroundColor3 = Enabled and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+        Callback(Enabled)
+        Tox.AutoSaveConfiguration()
+    end)
+    return Button
+end
+
+function Tox.UI.CreateButton(Name, Page, Callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, -5, 0, 39)
+    Button.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    Button.Text = Name
+    Button.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Button.Font = Enum.Font.GothamMedium
+    Button.TextSize = 13
+    Button.Parent = Page
+
+    local Corner = Instance.new("UICorner") Corner.CornerRadius = UDim.new(0, 4) Corner.Parent = Button
+    Button.MouseButton1Click:Connect(Callback)
+    return Button
+end
+
+-- ========================================================
+-- CARREGAMENTO DAS ABAS VIA GITHUB
+-- ========================================================
+loadstring(game:HttpGet(baseUrl .. "tab_player.lua"))()
+loadstring(game:HttpGet(baseUrl .. "tab_visuals.lua"))()
+loadstring(game:HttpGet(baseUrl .. "tab_misc.lua"))()
+loadstring(game:HttpGet(baseUrl .. "tab_scripts.lua"))()
+loadstring(game:HttpGet(baseUrl .. "tab_config.lua"))()
+
+-- Animação de Entrada
+Main.Size = UDim2.new(0, 330, 0, 395)
+Main.Position = UDim2.new(0.5, -165, 0.5, -197)
+Main.Visible = true
+Tox.CustomNotify("Tox v1 Carregado com Sucesso!", Color3.fromRGB(100, 255, 100))
