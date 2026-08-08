@@ -1,0 +1,25 @@
+local Tox = getgenv().Tox
+local Page = Tox.Pages["MISC"]
+local Settings = Tox.Settings
+local Services = Tox.Services
+local Player = Tox.Player
+
+Tox.UI.CreateToggle("Ctrl Click TP", Page, Settings.CtrlClickTP, function(v)
+    Settings.CtrlClickTP = v
+end)
+
+Services.UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if Settings.CtrlClickTP and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if Services.UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            local mouse = Player:GetMouse()
+            if mouse.Target and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                Player.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end
+end)
+
+Tox.UI.CreateToggle("Anti Fling", Page, Settings.AntiFling, function(v)
+    Settings.AntiFling = v
+end)
