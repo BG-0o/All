@@ -1,5 +1,6 @@
 -- ToxMisc.lua
 local Players = game:GetService("Players")
+local SoundService = game:GetService("SoundService")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 
@@ -7,61 +8,100 @@ local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-
 
 local ToxMisc = {}
 
-function ToxMisc:SetAntiAFK(state)
-    ToxConfig:Set("Misc", "AntiAFK", state)
-    if state and not self.AFKConn then
-        self.AFKConn = LocalPlayer.Idled:Connect(function()
-            local vu = game:GetService("VirtualUser")
-            vu:CaptureController()
-            vu:ClickButton2(Vector2.new())
-        end)
-    elseif not state and self.AFKConn then
-        self.AFKConn:Disconnect()
-        self.AFKConn = nil
-    end
-end
+function ToxMisc:Init(parentPage, hub)
+    local MAIN_COLOR = Color3.fromRGB(9, 0, 136)
 
-function ToxMisc:Init(parentFrame, hub)
-    local afkBtn = Instance.new("TextButton")
-    afkBtn.Size = UDim2.new(1, -10, 0, 32)
-    afkBtn.BackgroundColor3 = ToxConfig:Get("Misc", "AntiAFK", true) and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(40, 40, 40)
-    afkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    afkBtn.Text = "Anti AFK: " .. (ToxConfig:Get("Misc", "AntiAFK", true) and "ON" or "OFF")
-    afkBtn.Font = Enum.Font.SourceSansBold
-    afkBtn.TextSize = 14
-    afkBtn.Parent = parentFrame
+    -- Janela de Chat Logs com Botão de Minimizar "-"
+    local ChatLogGui = Instance.new("Frame")
+    ChatLogGui.Name = "ChatLogFrame"
+    ChatLogGui.Size = UDim2.new(0, 350, 0, 230)
+    ChatLogGui.Position = UDim2.new(0.5, 180, 0.5, -115)
+    ChatLogGui.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+    ChatLogGui.BorderSizePixel = 0
+    ChatLogGui.ClipsDescendants = true
+    ChatLogGui.Visible = false
+    ChatLogGui.Parent = hub.Gui
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = afkBtn
+    local ChatLogCorner = Instance.new("UICorner")
+    ChatLogCorner.CornerRadius = UDim.new(0, 8)
+    ChatLogCorner.Parent = ChatLogGui
 
-    afkBtn.MouseButton1Click:Connect(function()
-        local state = not ToxConfig:Get("Misc", "AntiAFK", true)
-        self:SetAntiAFK(state)
-        afkBtn.Text = "Anti AFK: " .. (state and "ON" or "OFF")
-        afkBtn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(40, 40, 40)
+    local ChatLogStroke = Instance.new("UIStroke")
+    ChatLogStroke.Color = MAIN_COLOR
+    ChatLogStroke.Thickness = 2
+    ChatLogStroke.Parent = ChatLogGui
+
+    local ChatLogTopBar = Instance.new("Frame")
+    ChatLogTopBar.Size = UDim2.new(1, 0, 0, 32)
+    ChatLogTopBar.BackgroundColor3 = MAIN_COLOR
+    ChatLogTopBar.BorderSizePixel = 0
+    ChatLogTopBar.Parent = ChatLogGui
+
+    local ChatLogTitle = Instance.new("TextLabel")
+    ChatLogTitle.Size = UDim2.new(1, -110, 1, 0)
+    ChatLogTitle.Position = UDim2.new(0, 10, 0, 0)
+    ChatLogTitle.BackgroundTransparency = 1
+    ChatLogTitle.Text = "Chat Logs"
+    ChatLogTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ChatLogTitle.Font = Enum.Font.GothamBold
+    ChatLogTitle.TextSize = 13
+    ChatLogTitle.TextXAlignment = Enum.TextXAlignment.Left
+    ChatLogTitle.Parent = ChatLogTopBar
+
+    local ChatLogContent = Instance.new("Frame")
+    ChatLogContent.Size = UDim2.new(1, 0, 1, -32)
+    ChatLogContent.Position = UDim2.new(0, 0, 0, 32)
+    ChatLogContent.BackgroundTransparency = 1
+    ChatLogContent.Parent = ChatLogGui
+
+    hub:AddMinimizeButton(ChatLogTopBar, ChatLogContent)
+
+    -- Janela do Music Player com Botão de Minimizar "-"
+    local MusicGui = Instance.new("Frame")
+    MusicGui.Name = "MusicPlayerFrame"
+    MusicGui.Size = UDim2.new(0, 330, 0, 350)
+    MusicGui.Position = UDim2.new(0.5, -165, 0.5, -175)
+    MusicGui.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+    MusicGui.BorderSizePixel = 0
+    MusicGui.ClipsDescendants = true
+    MusicGui.Visible = false
+    MusicGui.Parent = hub.Gui
+
+    local MusicCorner = Instance.new("UICorner")
+    MusicCorner.CornerRadius = UDim.new(0, 8)
+    MusicCorner.Parent = MusicGui
+
+    local MusicTopBar = Instance.new("Frame")
+    MusicTopBar.Size = UDim2.new(1, 0, 0, 32)
+    MusicTopBar.BackgroundColor3 = MAIN_COLOR
+    MusicTopBar.BorderSizePixel = 0
+    MusicTopBar.Parent = MusicGui
+
+    local MusicContent = Instance.new("Frame")
+    MusicContent.Size = UDim2.new(1, 0, 1, -32)
+    MusicContent.Position = UDim2.new(0, 0, 0, 32)
+    MusicContent.BackgroundTransparency = 1
+    MusicContent.Parent = MusicGui
+
+    hub:AddMinimizeButton(MusicTopBar, MusicContent)
+
+    -- Botão para abrir o Music Player na Aba MISC
+    local musicBtn = Instance.new("TextButton")
+    musicBtn.Size = UDim2.new(1, -5, 0, 39)
+    musicBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    musicBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    musicBtn.Text = "Music Player"
+    musicBtn.Font = Enum.Font.GothamMedium
+    musicBtn.TextSize = 13
+    musicBtn.Parent = parentPage
+
+    local mCorner = Instance.new("UICorner")
+    mCorner.CornerRadius = UDim.new(0, 4)
+    mCorner.Parent = musicBtn
+
+    musicBtn.MouseButton1Click:Connect(function()
+        MusicGui.Visible = not MusicGui.Visible
     end)
-
-    local rejBtn = Instance.new("TextButton")
-    rejBtn.Size = UDim2.new(1, -10, 0, 32)
-    rejBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    rejBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    rejBtn.Text = "Reentrar no Servidor (Rejoin)"
-    rejBtn.Font = Enum.Font.SourceSansBold
-    rejBtn.TextSize = 14
-    rejBtn.Parent = parentFrame
-
-    local rejCorner = Instance.new("UICorner")
-    rejCorner.CornerRadius = UDim.new(0, 4)
-    rejCorner.Parent = rejBtn
-
-    rejBtn.MouseButton1Click:Connect(function()
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-    end)
-
-    if ToxConfig:Get("Misc", "AntiAFK", true) then
-        self:SetAntiAFK(true)
-    end
 end
 
 return ToxMisc
