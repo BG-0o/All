@@ -48,7 +48,6 @@ local Settings = {
 	CtrlClickTP = false,
 	Float = false,
 	NormalizeAnims = false,
-	Emulation = false,
 	AntiAFK = true,
 	ChatLogs = false,
 	Render3D = true,
@@ -69,15 +68,12 @@ local Settings = {
 	EspColorName = "White",
 	EspColor = Color3.fromRGB(255, 255, 255),
 	EspSize = 13,
-	UseLegacy = false,
 	ShowHealth = false,
 	NameType = "Display",
 	Chams = false,
-	UseHighlights = false,
+	ChamOpacity = 0.75,
 	OutlineColor = Color3.fromRGB(255, 255, 255),
 	OutlineOpacity = 0.5,
-	ChamOpacity = 0.75,
-	Tracers = false,
 	DisableTeam = false,
 	ShowTeamColor = false,
 	GUIKeybind = Enum.KeyCode.LeftAlt,
@@ -85,11 +81,38 @@ local Settings = {
     MusicLoop = false
 }
 
-local Character, Humanoid, RootPart
+local SavedIDs = {} 
 local Destroyed = false
 local IsLoaded = false
 
--- NOTIFICAÇÕES
+local FolderName = "ToxV1_Data"
+local ConfigFilePath = FolderName .. "/config.json"
+
+local function EnsureFolder()
+    if makefolder and isfolder then
+        pcall(function()
+            if not isfolder(FolderName) then makefolder(FolderName) end
+        end)
+    end
+end
+
+local function AutoSaveConfiguration()
+    if Destroyed then return end
+    EnsureFolder()
+    if not writefile then return end
+
+    local data = {
+        Settings = Settings,
+        SavedIDs = SavedIDs
+    }
+
+    pcall(function()
+        local json = HttpService:JSONEncode(data)
+        writefile(ConfigFilePath, json)
+    end)
+end
+
+-- SISTEMA DE NOTIFICAÇÕES
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "ToxNotifs"
 NotifGui.DisplayOrder = 999
@@ -159,6 +182,7 @@ Players.PlayerRemoving:Connect(function(p)
     CustomNotify(p.DisplayName .. " left", Color3.fromRGB(255, 100, 100))
 end)
 
+-- ESTRUTURA PRINCIPAL DA GUI
 local ParentContainer = (gethui and gethui()) or game:GetService("CoreGui") or Player:WaitForChild("PlayerGui")
 
 local Gui = Instance.new("ScreenGui")
@@ -335,7 +359,7 @@ CombatPage.Visible = true
 CombatTab.BackgroundColor3 = MAIN_COLOR
 CombatTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- GERADORES DE ELEMENTOS DE UI
+-- GERADORES DE ELEMENTOS DE UI (UTILIZADOS POR TODOS OS MÓDULOS)
 local function CreateToggle(Name, Page, DefaultValue, Callback)
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(1, -5, 0, 39)
@@ -393,6 +417,7 @@ local function CreateToggle(Name, Page, DefaultValue, Callback)
 		Enabled = not Enabled
 		Update()
 		Callback(Enabled)
+        AutoSaveConfiguration()
 	end)
 
 	Update()
@@ -470,12 +495,18 @@ local function CreateToggleWithValue(Name, Page, DefaultToggle, DefaultValue, Ca
 		Enabled = not Enabled
 		UpdateToggle()
 		CallbackToggle(Enabled)
+        AutoSaveConfiguration()
 	end)
 
 	Input.FocusLost:Connect(function()
 		if Destroyed then return end
 		local Number = tonumber(Input.Text)
-		if Number then CallbackValue(Number) else Input.Text = tostring(DefaultValue) end
+		if Number then
+			CallbackValue(Number)
+            AutoSaveConfiguration()
+		else
+			Input.Text = tostring(DefaultValue)
+		end
 	end)
 
 	UpdateToggle()
@@ -618,6 +649,85 @@ local function CreateInputWithToggle(Name, Page, DefaultText, CallbackToggle)
 	return Container
 end
 
+local function CreateTeleportRow(Name, Page, CallbackGo, CallbackLoop)
+	local Container = Instance.new("Frame")
+	Container.Size = UDim2.new(1, -5, 0, 48)
+	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Container.BorderSizePixel = 0
+	Container.Parent = Page
+
+	local ContainerCorner = Instance.new("UICorner") ContainerCorner.CornerRadius = UDim.new(0, 4) ContainerCorner.Parent = Container
+
+	local Label = Instance.new("TextLabel")
+	Label.Size = UDim2.new(1, -210, 1, 0)
+	Label.Position = UDim2.new(0, 12, 0, 0)
+	Label.BackgroundTransparency = 1
+	Label.Text = Name
+	Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+	Label.TextSize = 13
+	Label.Font = Enum.Font.GothamMedium
+	Label.TextXAlignment = Enum.TextXAlignment.Left
+	Label.Parent = Container
+
+	local Input = Instance.new("TextBox")
+	Input.Size = UDim2.new(0, 75, 0, 27)
+	Input.Position = UDim2.new(1, -195, 0.5, -13)
+	Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Input.BorderSizePixel = 0
+	Input.Text = ""
+	Input.PlaceholderText = "Nick"
+	Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Input.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+	Input.TextSize = 11
+	Input.Font = Enum.Font.Gotham
+	Input.ClearTextOnFocus = false
+	Input.Parent = Container
+
+	local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0, 4) InputCorner.Parent = Input
+
+	local GoBtn = Instance.new("TextButton")
+	GoBtn.Size = UDim2.new(0, 45, 0, 27)
+	GoBtn.Position = UDim2.new(1, -115, 0.5, -13)
+	GoBtn.BackgroundColor3 = MAIN_COLOR
+	GoBtn.BorderSizePixel = 0
+	GoBtn.Text = "Go!"
+	GoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	GoBtn.TextSize = 11
+	GoBtn.Font = Enum.Font.GothamBold
+	GoBtn.Parent = Container
+
+	local GoCorner = Instance.new("UICorner") GoCorner.CornerRadius = UDim.new(0, 4) GoCorner.Parent = GoBtn
+
+	local LoopBtn = Instance.new("TextButton")
+	LoopBtn.Size = UDim2.new(0, 60, 0, 27)
+	LoopBtn.Position = UDim2.new(1, -65, 0.5, -13)
+	LoopBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+	LoopBtn.BorderSizePixel = 0
+	LoopBtn.Text = "Loop TP"
+	LoopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	LoopBtn.TextSize = 10
+	LoopBtn.Font = Enum.Font.GothamBold
+	LoopBtn.Parent = Container
+
+	local LoopCorner = Instance.new("UICorner") LoopCorner.CornerRadius = UDim.new(0, 4) LoopCorner.Parent = LoopBtn
+
+	local LoopEnabled = false
+
+	GoBtn.MouseButton1Click:Connect(function()
+		if Destroyed then return end
+		CallbackGo(Input.Text)
+	end)
+
+	LoopBtn.MouseButton1Click:Connect(function()
+		if Destroyed then return end
+		LoopEnabled = not LoopEnabled
+		LoopBtn.BackgroundColor3 = LoopEnabled and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+		CallbackLoop(LoopEnabled, Input.Text)
+	end)
+
+	return Container
+end
+
 local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
 	local Box = Instance.new("Frame")
 	Box.Size = UDim2.new(1, -5, 0, 48)
@@ -660,6 +770,7 @@ local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
 		if CurrentIdx > #Options then CurrentIdx = 1 end
 		Button.Text = Options[CurrentIdx]
 		Callback(Options[CurrentIdx])
+        AutoSaveConfiguration()
 	end)
 
 	return Box
@@ -718,8 +829,9 @@ local function CreateKeybind(Name, Page, DefaultKey, Callback)
 			else
 				Button.Text = input.KeyCode.Name; Callback(input.KeyCode)
 			end
+            AutoSaveConfiguration()
 		else
-			Binding = false; Button.Text = "None"; Callback(nil)
+			Binding = false; Button.Text = "None"; Callback(nil); AutoSaveConfiguration()
 		end
 	end)
 
@@ -758,16 +870,18 @@ getgenv().ToxEnv = {
     CreateToggleWithValue = CreateToggleWithValue,
     CreateInputWithButton = CreateInputWithButton,
     CreateInputWithToggle = CreateInputWithToggle,
+    CreateTeleportRow = CreateTeleportRow,
     CreateDropdown = CreateDropdown,
     CreateKeybind = CreateKeybind,
     CreateButton = CreateButton,
     CustomNotify = CustomNotify,
+    AutoSaveConfiguration = AutoSaveConfiguration,
     
     Player = Player,
     Destroyed = false
 }
 
--- ANIMACAO DE LOADING E CARREGAMENTO DOS MÓDULOS
+-- ANIMACAO DE CARREGAMENTO & CARREGAMENTO DE MÓDULOS
 local function ShowCenterLoadSequence()
     local SplashFrame = Instance.new("Frame")
     SplashFrame.Size = UDim2.new(0, 320, 0, 95)
@@ -878,7 +992,7 @@ local function ShowCenterLoadSequence()
 
             IsLoaded = true
 
-            -- CARREGAMENTO DOS 6 MÓDULOS SEPARADOS NO GITHUB
+            -- CARREGAMENTO INDIVIDUAL DOS 6 MÓDULOS NO GITHUB
             local baseUrl = "https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/"
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxCombat.lua"))() end)
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxPlayer.lua"))() end)
@@ -892,7 +1006,14 @@ end
 
 task.spawn(ShowCenterLoadSequence)
 
--- Minimizar GUI
+-- KEYBIND PARA OCULTAR A GUI
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or Destroyed then return end
+    if Settings.GUIKeybind and input.KeyCode == Settings.GUIKeybind then
+        Main.Visible = not Main.Visible
+    end
+end)
+
 local Minimized = false
 Minimize.MouseButton1Click:Connect(function()
 	Minimized = not Minimized
