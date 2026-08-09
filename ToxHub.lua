@@ -1,5 +1,5 @@
 -- ========================================================
--- ToxHub.lua - Base Interface & Module Loader
+-- ToxHub.lua - Base Framework & Core Loader
 -- ========================================================
 
 local Players = game:GetService("Players")
@@ -44,10 +44,10 @@ local Settings = {
 	NoFallDamage = false,
 	AntiVoid = false,
 	AntiFling = true,
-	WalkFling = false,
 	CtrlClickTP = false,
 	Float = false,
 	NormalizeAnims = false,
+	Emulation = false,
 	AntiAFK = true,
 	ChatLogs = false,
 	Render3D = true,
@@ -68,12 +68,15 @@ local Settings = {
 	EspColorName = "White",
 	EspColor = Color3.fromRGB(255, 255, 255),
 	EspSize = 13,
+	UseLegacy = false,
 	ShowHealth = false,
 	NameType = "Display",
 	Chams = false,
-	ChamOpacity = 0.75,
+	UseHighlights = false,
 	OutlineColor = Color3.fromRGB(255, 255, 255),
 	OutlineOpacity = 0.5,
+	ChamOpacity = 0.75,
+	Tracers = false,
 	DisableTeam = false,
 	ShowTeamColor = false,
 	GUIKeybind = Enum.KeyCode.LeftAlt,
@@ -82,8 +85,21 @@ local Settings = {
 }
 
 local SavedIDs = {} 
+local CurrentTrackIndex = 1
+
+local Character, Humanoid, RootPart
 local Destroyed = false
 local IsLoaded = false
+
+local OriginalLighting = {
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    FogStart = Lighting.FogStart,
+    GlobalShadows = Lighting.GlobalShadows
+}
 
 local FolderName = "ToxV1_Data"
 local ConfigFilePath = FolderName .. "/config.json"
@@ -102,7 +118,42 @@ local function AutoSaveConfiguration()
     if not writefile then return end
 
     local data = {
-        Settings = Settings,
+        Settings = {
+            Speed = Settings.Speed,
+            SpeedValue = Settings.SpeedValue,
+            Jump = Settings.Jump,
+            JumpValue = Settings.JumpValue,
+            Fly = Settings.Fly,
+            FlySpeed = Settings.FlySpeed,
+            FlyCar = Settings.FlyCar,
+            FlyCarSpeed = Settings.FlyCarSpeed,
+            Float = Settings.Float,
+            FloatStrength = Settings.FloatStrength,
+            Noclip = Settings.Noclip,
+            InfiniteJump = Settings.InfiniteJump,
+            CtrlClickTP = Settings.CtrlClickTP,
+            NoFallDamage = Settings.NoFallDamage,
+            AntiVoid = Settings.AntiVoid,
+            AntiFling = Settings.AntiFling,
+            AntiAFK = Settings.AntiAFK,
+            ChatLogs = Settings.ChatLogs,
+            Render3D = Settings.Render3D,
+            ESP = Settings.ESP,
+            EspSize = Settings.EspSize,
+            EspColorName = Settings.EspColorName,
+            ShowHealth = Settings.ShowHealth,
+            NameType = Settings.NameType,
+            Chams = Settings.Chams,
+            ShowTeamColor = Settings.ShowTeamColor,
+            DisableTeam = Settings.DisableTeam,
+            Freecam = Settings.Freecam,
+            Fullbright = Settings.Fullbright,
+            FOVEnabled = Settings.FOVEnabled,
+            FOVValue = Settings.FOVValue,
+            GUIKeybind = Settings.GUIKeybind and Settings.GUIKeybind.Name or "LeftAlt",
+            MusicAutoPlay = Settings.MusicAutoPlay,
+            MusicLoop = Settings.MusicLoop
+        },
         SavedIDs = SavedIDs
     }
 
@@ -111,6 +162,35 @@ local function AutoSaveConfiguration()
         writefile(ConfigFilePath, json)
     end)
 end
+
+local RenderSavedIDs 
+
+local function LoadConfiguration()
+    if not isfile or not readfile or not isfile(ConfigFilePath) then return end
+
+    pcall(function()
+        local content = readfile(ConfigFilePath)
+        local data = HttpService:JSONDecode(content)
+
+        if data then
+            if data.Settings then
+                for k, v in pairs(data.Settings) do
+                    if k == "GUIKeybind" then
+                        pcall(function() Settings.GUIKeybind = Enum.KeyCode[v] end)
+                    else
+                        Settings[k] = v
+                    end
+                end
+            end
+            if data.SavedIDs then
+                SavedIDs = data.SavedIDs
+                if RenderSavedIDs then RenderSavedIDs() end
+            end
+        end
+    end)
+end
+
+LoadConfiguration()
 
 -- SISTEMA DE NOTIFICAÇÕES
 local NotifGui = Instance.new("ScreenGui")
@@ -173,16 +253,23 @@ local function CustomNotify(text, color)
     end)
 end
 
--- JOIN / LEFT NOTIFICATIONS
-Players.PlayerAdded:Connect(function(p)
-    CustomNotify(p.DisplayName .. " joined", Color3.fromRGB(100, 255, 100))
-end)
+local function Message(_Title, _Text, Time)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {Title = _Title, Text = _Text, Duration = Time})
+	end)
+end
 
-Players.PlayerRemoving:Connect(function(p)
-    CustomNotify(p.DisplayName .. " left", Color3.fromRGB(255, 100, 100))
-end)
+Players.PlayerAdded:Connect(function(p) CustomNotify(p.DisplayName .. " joined", Color3.fromRGB(100, 255, 100)) end)
+Players.PlayerRemoving:Connect(function(p) CustomNotify(p.DisplayName .. " left", Color3.fromRGB(255, 100, 100)) end)
 
--- ESTRUTURA PRINCIPAL DA GUI
+local function UpdateCharacter()
+	if Destroyed then return end
+	Character = Player.Character or Player.CharacterAdded:Wait()
+	Humanoid = Character:WaitForChild("Humanoid")
+	RootPart = Character:WaitForChild("HumanoidRootPart")
+end
+UpdateCharacter()
+
 local ParentContainer = (gethui and gethui()) or game:GetService("CoreGui") or Player:WaitForChild("PlayerGui")
 
 local Gui = Instance.new("ScreenGui")
@@ -262,7 +349,8 @@ Tabs.Size = UDim2.new(1, -10, 0, 34)
 Tabs.Position = UDim2.new(0, 5, 0, 44)
 Tabs.BackgroundTransparency = 1
 Tabs.BorderSizePixel = 0
-Tabs.ScrollBarThickness = 0
+Tabs.ScrollBarThickness = 2
+Tabs.ScrollBarImageColor3 = MAIN_COLOR
 Tabs.ScrollingDirection = Enum.ScrollingDirection.X
 Tabs.CanvasSize = UDim2.new(0, 0, 0, 0)
 Tabs.Parent = Main
@@ -308,7 +396,7 @@ end
 local CombatPage = CreatePage("COMBAT")
 local PlayerPage = CreatePage("PLAYER")
 local VisualsPage = CreatePage("VISUALS")
-local MiscPage = CreatePage("MISC")
+local FlingPage = CreatePage("MISC")
 local ScriptsPage = CreatePage("SCRIPTS")
 local ConfigPage = CreatePage("CONFIG")
 
@@ -351,7 +439,7 @@ end
 local CombatTab = CreateTab("COMBAT", CombatPage)
 local PlayerTab = CreateTab("PLAYER", PlayerPage)
 local VisualsTab = CreateTab("VISUALS", VisualsPage)
-local MiscTab = CreateTab("MISC", MiscPage)
+local FlingTab = CreateTab("MISC", FlingPage)
 local ScriptsTab = CreateTab("SCRIPTS", ScriptsPage)
 local ConfigTab = CreateTab("CONFIG", ConfigPage)
 
@@ -359,7 +447,210 @@ CombatPage.Visible = true
 CombatTab.BackgroundColor3 = MAIN_COLOR
 CombatTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- GERADORES DE ELEMENTOS DE UI (UTILIZADOS POR TODOS OS MÓDULOS)
+-- CHAT LOGS GUI
+local ChatLogGui = Instance.new("Frame")
+ChatLogGui.Name = "ChatLogFrame"
+ChatLogGui.Size = UDim2.new(0, 350, 0, 230)
+ChatLogGui.Position = UDim2.new(0.5, 180, 0.5, -115)
+ChatLogGui.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+ChatLogGui.BorderSizePixel = 0
+ChatLogGui.ClipsDescendants = true
+ChatLogGui.Visible = false
+ChatLogGui.Parent = Gui
+
+local ChatLogCorner = Instance.new("UICorner") ChatLogCorner.CornerRadius = UDim.new(0, 8) ChatLogCorner.Parent = ChatLogGui
+local ChatLogStroke = Instance.new("UIStroke") ChatLogStroke.Color = MAIN_COLOR ChatLogStroke.Thickness = 2 ChatLogStroke.Parent = ChatLogGui
+
+local ChatLogTopBar = Instance.new("Frame")
+ChatLogTopBar.Size = UDim2.new(1, 0, 0, 32)
+ChatLogTopBar.BackgroundColor3 = MAIN_COLOR
+ChatLogTopBar.BorderSizePixel = 0
+ChatLogTopBar.Parent = ChatLogGui
+
+local ChatLogTitle = Instance.new("TextLabel")
+ChatLogTitle.Size = UDim2.new(1, -110, 1, 0)
+ChatLogTitle.Position = UDim2.new(0, 10, 0, 0)
+ChatLogTitle.BackgroundTransparency = 1
+ChatLogTitle.Text = "Chat Logs"
+ChatLogTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChatLogTitle.Font = Enum.Font.GothamBold
+ChatLogTitle.TextSize = 13
+ChatLogTitle.TextXAlignment = Enum.TextXAlignment.Left
+ChatLogTitle.Parent = ChatLogTopBar
+
+local ClearBtn = Instance.new("TextButton")
+ClearBtn.Size = UDim2.new(0, 52, 0, 22)
+ClearBtn.Position = UDim2.new(1, -60, 0.5, -11)
+ClearBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 35)
+ClearBtn.BorderSizePixel = 0
+ClearBtn.Text = "Clear"
+ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearBtn.Font = Enum.Font.GothamBold
+ClearBtn.TextSize = 11
+ClearBtn.Parent = ChatLogTopBar
+
+local ClearCorner = Instance.new("UICorner") ClearCorner.CornerRadius = UDim.new(0, 4) ClearCorner.Parent = ClearBtn
+
+local ChatLogScroll = Instance.new("ScrollingFrame")
+ChatLogScroll.Size = UDim2.new(1, -12, 1, -42)
+ChatLogScroll.Position = UDim2.new(0, 6, 0, 36)
+ChatLogScroll.BackgroundTransparency = 1
+ChatLogScroll.BorderSizePixel = 0
+ChatLogScroll.ScrollBarThickness = 4
+ChatLogScroll.ScrollBarImageColor3 = MAIN_COLOR
+ChatLogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+ChatLogScroll.Parent = ChatLogGui
+
+local ChatLogLayout = Instance.new("UIListLayout")
+ChatLogLayout.Padding = UDim.new(0, 4)
+ChatLogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ChatLogLayout.Parent = ChatLogScroll
+
+ChatLogLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ChatLogScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLogLayout.AbsoluteContentSize.Y + 10)
+    ChatLogScroll.CanvasPosition = Vector2.new(0, ChatLogLayout.AbsoluteContentSize.Y)
+end)
+
+ClearBtn.MouseButton1Click:Connect(function()
+    for _, child in ipairs(ChatLogScroll:GetChildren()) do
+        if child:IsA("TextLabel") then child:Destroy() end
+    end
+end)
+
+local LastChatCache = {}
+local function AddChatLog(p, msg)
+    if not Settings.ChatLogs or Destroyed or not p then return end
+    local cleanMsg = tostring(msg):gsub("<[^>]+>", "")
+    if cleanMsg == "" then return end
+    local pName = p.DisplayName or p.Name
+    local cacheKey = pName .. ":" .. cleanMsg
+    if LastChatCache[cacheKey] and (tick() - LastChatCache[cacheKey]) < 0.8 then return end
+    LastChatCache[cacheKey] = tick()
+    local timestamp = os.date("%H:%M:%S")
+    local logText = string.format("[%s] %s: %s", timestamp, pName, cleanMsg)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -6, 0, 0)
+    Label.AutomaticSize = Enum.AutomaticSize.Y
+    Label.BackgroundTransparency = 1
+    Label.Text = logText
+    Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextWrapped = true
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = ChatLogScroll
+end
+
+-- MUSIC PLAYER GUI
+local MusicGui = Instance.new("Frame")
+MusicGui.Name = "MusicPlayerFrame"
+MusicGui.Size = UDim2.new(0, 330, 0, 350)
+MusicGui.Position = UDim2.new(0.5, -165, 0.5, -175)
+MusicGui.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+MusicGui.BorderSizePixel = 0
+MusicGui.ClipsDescendants = true
+MusicGui.Visible = false
+MusicGui.Parent = Gui
+
+local MusicCorner = Instance.new("UICorner") MusicCorner.CornerRadius = UDim.new(0, 8) MusicCorner.Parent = MusicGui
+local MusicStroke = Instance.new("UIStroke") MusicStroke.Color = MAIN_COLOR MusicStroke.Thickness = 2 MusicStroke.Parent = MusicGui
+
+local MusicTopBar = Instance.new("Frame")
+MusicTopBar.Size = UDim2.new(1, 0, 0, 32)
+MusicTopBar.BackgroundColor3 = MAIN_COLOR
+MusicTopBar.BorderSizePixel = 0
+MusicTopBar.Parent = MusicGui
+
+local MusicTitle = Instance.new("TextLabel")
+MusicTitle.Size = UDim2.new(1, -40, 1, 0)
+MusicTitle.Position = UDim2.new(0, 10, 0, 0)
+MusicTitle.BackgroundTransparency = 1
+MusicTitle.Text = "Tox Music Player"
+MusicTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicTitle.Font = Enum.Font.GothamBold
+MusicTitle.TextSize = 13
+MusicTitle.TextXAlignment = Enum.TextXAlignment.Left
+MusicTitle.Parent = MusicTopBar
+
+local MusicCloseBtn = Instance.new("TextButton")
+MusicCloseBtn.Size = UDim2.new(0, 24, 0, 22)
+MusicCloseBtn.Position = UDim2.new(1, -28, 0.5, -11)
+MusicCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+MusicCloseBtn.BorderSizePixel = 0
+MusicCloseBtn.Text = "X"
+MusicCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicCloseBtn.Font = Enum.Font.GothamBold
+MusicCloseBtn.TextSize = 11
+MusicCloseBtn.Parent = MusicTopBar
+local MusicCloseCorner = Instance.new("UICorner") MusicCloseCorner.CornerRadius = UDim.new(0, 4) MusicCloseCorner.Parent = MusicCloseBtn
+MusicCloseBtn.MouseButton1Click:Connect(function() MusicGui.Visible = false end)
+
+local CustomSound = Instance.new("Sound")
+CustomSound.Name = "ToxMusicSound"
+CustomSound.Looped = false
+CustomSound.Volume = 1
+CustomSound.Parent = SoundService
+
+local MusicContent = Instance.new("Frame")
+MusicContent.Size = UDim2.new(1, -16, 1, -40)
+MusicContent.Position = UDim2.new(0, 8, 0, 36)
+MusicContent.BackgroundTransparency = 1
+MusicContent.Parent = MusicGui
+
+local IDInput = Instance.new("TextBox")
+IDInput.Size = UDim2.new(0, 130, 0, 26)
+IDInput.Position = UDim2.new(0, 0, 0, 0)
+IDInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+IDInput.PlaceholderText = "Sound ID..."
+IDInput.Text = ""
+IDInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+IDInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+IDInput.Font = Enum.Font.Gotham
+IDInput.TextSize = 11
+IDInput.ClearTextOnFocus = false
+IDInput.Parent = MusicContent
+local IDInputCorner = Instance.new("UICorner") IDInputCorner.CornerRadius = UDim.new(0, 4) IDInputCorner.Parent = IDInput
+
+local NameInput = Instance.new("TextBox")
+NameInput.Size = UDim2.new(0, 110, 0, 26)
+NameInput.Position = UDim2.new(0, 134, 0, 0)
+NameInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+NameInput.PlaceholderText = "Track Name..."
+NameInput.Text = ""
+NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+NameInput.Font = Enum.Font.Gotham
+NameInput.TextSize = 11
+NameInput.ClearTextOnFocus = false
+NameInput.Parent = MusicContent
+local NameInputCorner = Instance.new("UICorner") NameInputCorner.CornerRadius = UDim.new(0, 4) NameInputCorner.Parent = NameInput
+
+local PlayPauseBtn = Instance.new("TextButton")
+PlayPauseBtn.Size = UDim2.new(0, 64, 0, 26)
+PlayPauseBtn.Position = UDim2.new(1, -64, 0, 0)
+PlayPauseBtn.BackgroundColor3 = MAIN_COLOR
+PlayPauseBtn.Text = "Play"
+PlayPauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayPauseBtn.Font = Enum.Font.GothamBold
+PlayPauseBtn.TextSize = 11
+PlayPauseBtn.Parent = MusicContent
+local PlayPauseCorner = Instance.new("UICorner") PlayPauseCorner.CornerRadius = UDim.new(0, 4) PlayPauseCorner.Parent = PlayPauseBtn
+
+local SavedScroll = Instance.new("ScrollingFrame")
+SavedScroll.Size = UDim2.new(1, 0, 1, -64)
+SavedScroll.Position = UDim2.new(0, 0, 0, 62)
+SavedScroll.BackgroundTransparency = 1
+SavedScroll.ScrollBarThickness = 3
+SavedScroll.ScrollBarImageColor3 = MAIN_COLOR
+SavedScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+SavedScroll.Parent = MusicContent
+
+local SavedLayout = Instance.new("UIListLayout")
+SavedLayout.Padding = UDim.new(0, 4)
+SavedLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SavedLayout.Parent = SavedScroll
+
+-- GERADORES DA INTERFACE (CONSTRUTORES)
 local function CreateToggle(Name, Page, DefaultValue, Callback)
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(1, -5, 0, 39)
@@ -430,8 +721,6 @@ local function CreateToggleWithValue(Name, Page, DefaultToggle, DefaultValue, Ca
 	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 	Container.BorderSizePixel = 0
 	Container.Parent = Page
-
-	local ContainerCorner = Instance.new("UICorner") ContainerCorner.CornerRadius = UDim.new(0, 4) ContainerCorner.Parent = Container
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -125, 1, 0)
@@ -520,8 +809,6 @@ local function CreateInputWithButton(Name, Page, DefaultText, ButtonText, Callba
 	Box.BorderSizePixel = 0
 	Box.Parent = Page
 
-	local BoxCorner = Instance.new("UICorner") BoxCorner.CornerRadius = UDim.new(0, 4) BoxCorner.Parent = Box
-
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -170, 1, 0)
 	Label.Position = UDim2.new(0, 12, 0, 0)
@@ -554,7 +841,7 @@ local function CreateInputWithButton(Name, Page, DefaultText, ButtonText, Callba
 	Button.Position = UDim2.new(1, -65, 0.5, -13)
 	Button.BackgroundColor3 = MAIN_COLOR
 	Button.BorderSizePixel = 0
-	Button.Text = ButtonText or "Go"
+	Button.Text = ButtonText or "Fling"
 	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Button.TextSize = 12
 	Button.Font = Enum.Font.GothamBold
@@ -576,8 +863,6 @@ local function CreateInputWithToggle(Name, Page, DefaultText, CallbackToggle)
 	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 	Container.BorderSizePixel = 0
 	Container.Parent = Page
-
-	local ContainerCorner = Instance.new("UICorner") ContainerCorner.CornerRadius = UDim.new(0, 4) ContainerCorner.Parent = Container
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -160, 1, 0)
@@ -656,8 +941,6 @@ local function CreateTeleportRow(Name, Page, CallbackGo, CallbackLoop)
 	Container.BorderSizePixel = 0
 	Container.Parent = Page
 
-	local ContainerCorner = Instance.new("UICorner") ContainerCorner.CornerRadius = UDim.new(0, 4) ContainerCorner.Parent = Container
-
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -210, 1, 0)
 	Label.Position = UDim2.new(0, 12, 0, 0)
@@ -735,8 +1018,6 @@ local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
 	Box.BorderSizePixel = 0
 	Box.Parent = Page
 
-	local BoxCorner = Instance.new("UICorner") BoxCorner.CornerRadius = UDim.new(0, 4) BoxCorner.Parent = Box
-
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -110, 1, 0)
 	Label.Position = UDim2.new(0, 12, 0, 0)
@@ -758,8 +1039,6 @@ local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
 	Button.TextSize = 12
 	Button.Font = Enum.Font.Gotham
 	Button.Parent = Box
-
-	local BtnCorner = Instance.new("UICorner") BtnCorner.CornerRadius = UDim.new(0, 4) BtnCorner.Parent = Button
 
 	local CurrentIdx = 1
 	for i, opt in ipairs(Options) do if opt == DefaultOption then CurrentIdx = i end end
@@ -783,8 +1062,6 @@ local function CreateKeybind(Name, Page, DefaultKey, Callback)
 	Box.BorderSizePixel = 0
 	Box.Parent = Page
 
-	local BoxCorner = Instance.new("UICorner") BoxCorner.CornerRadius = UDim.new(0, 4) BoxCorner.Parent = Box
-
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -110, 1, 0)
 	Label.Position = UDim2.new(0, 12, 0, 0)
@@ -806,8 +1083,6 @@ local function CreateKeybind(Name, Page, DefaultKey, Callback)
 	Button.TextSize = 12
 	Button.Font = Enum.Font.Gotham
 	Button.Parent = Box
-
-	local BtnCorner = Instance.new("UICorner") BtnCorner.CornerRadius = UDim.new(0, 4) BtnCorner.Parent = Button
 
 	local Binding = false
 	local JustStarted = false
@@ -854,15 +1129,15 @@ local function CreateButton(Name, Page, Callback)
 	return Button
 end
 
--- EXPORTAÇÃO DO AMBIENTE GLOBAL (ToxEnv)
+-- AMBIENTE COMPARTILHADO (ToxEnv)
 getgenv().ToxEnv = {
     Settings = Settings,
     ColorMap = ColorMap,
     CombatPage = CombatPage,
     PlayerPage = PlayerPage,
     VisualsPage = VisualsPage,
-    MiscPage = MiscPage,
-    FlingPage = MiscPage,
+    MiscPage = FlingPage,
+    FlingPage = FlingPage,
     ScriptsPage = ScriptsPage,
     ConfigPage = ConfigPage,
     
@@ -875,13 +1150,17 @@ getgenv().ToxEnv = {
     CreateKeybind = CreateKeybind,
     CreateButton = CreateButton,
     CustomNotify = CustomNotify,
+    Message = Message,
     AutoSaveConfiguration = AutoSaveConfiguration,
+    
+    MusicGui = MusicGui,
+    ChatLogGui = ChatLogGui,
     
     Player = Player,
     Destroyed = false
 }
 
--- ANIMACAO DE CARREGAMENTO & CARREGAMENTO DE MÓDULOS
+-- ANIMACAO DE LOADING & CARREGAMENTO DOS MÓDULOS
 local function ShowCenterLoadSequence()
     local SplashFrame = Instance.new("Frame")
     SplashFrame.Size = UDim2.new(0, 320, 0, 95)
@@ -959,7 +1238,7 @@ local function ShowCenterLoadSequence()
     Sound:Play()
     Sound.Ended:Connect(function() Sound:Destroy() end)
 
-    local duration = 3
+    local duration = 5
     local steps = 100
     for i = 1, steps do
         local p = i / steps
@@ -977,6 +1256,7 @@ local function ShowCenterLoadSequence()
     fallTween.Completed:Connect(function()
         SplashFrame:Destroy()
         if not Destroyed then
+            task.wait(1)
             Main.Size = UDim2.new(0, 0, 0, 0)
             Main.Position = UDim2.new(0.5, 0, 0.5, 0)
             Main.Visible = true
@@ -992,7 +1272,7 @@ local function ShowCenterLoadSequence()
 
             IsLoaded = true
 
-            -- CARREGAMENTO INDIVIDUAL DOS 6 MÓDULOS NO GITHUB
+            -- CARREGAMENTO DOS MÓDULOS SEPARADOS NO GITHUB
             local baseUrl = "https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/"
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxCombat.lua"))() end)
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxPlayer.lua"))() end)
@@ -1006,11 +1286,12 @@ end
 
 task.spawn(ShowCenterLoadSequence)
 
--- KEYBIND PARA OCULTAR A GUI
+-- ATALHO DE TECLA PARA ABRIR/FECHAR A GUI
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed or Destroyed then return end
     if Settings.GUIKeybind and input.KeyCode == Settings.GUIKeybind then
         Main.Visible = not Main.Visible
+        if Settings.ChatLogs then ChatLogGui.Visible = Main.Visible end
     end
 end)
 
