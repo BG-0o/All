@@ -391,8 +391,7 @@ Tabs.Size = UDim2.new(1, -10, 0, 34)
 Tabs.Position = UDim2.new(0, 5, 0, 44)
 Tabs.BackgroundTransparency = 1
 Tabs.BorderSizePixel = 0
-Tabs.ScrollBarThickness = 2
-Tabs.ScrollBarImageColor3 = MAIN_COLOR
+Tabs.ScrollBarThickness = 0 -- Oculta a barra para remover a linha azul
 Tabs.ScrollingDirection = Enum.ScrollingDirection.X
 Tabs.CanvasSize = UDim2.new(0, 0, 0, 0)
 Tabs.Parent = Main
@@ -1008,13 +1007,19 @@ end)
 
 RenderSavedIDs()
 
--- UI CREATORS
+-- UI CREATORS (COM UICORNER NOS CONTAINERS)
 local function CreateToggle(Name, Page, DefaultValue, Callback)
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(1, -5, 0, 39)
 	Button.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Button.BorderSizePixel = 0
 	Button.Text = ""
+	Button.AutoButtonColor = false
 	Button.Parent = Page
+
+	local BtnCorner = Instance.new("UICorner")
+	BtnCorner.CornerRadius = UDim.new(0, 4)
+	BtnCorner.Parent = Button
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -65, 1, 0)
@@ -1031,17 +1036,23 @@ local function CreateToggle(Name, Page, DefaultValue, Callback)
 	Toggle.Size = UDim2.new(0, 38, 0, 20)
 	Toggle.Position = UDim2.new(1, -48, 0.5, -10)
 	Toggle.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+	Toggle.BorderSizePixel = 0
 	Toggle.Parent = Button
 
-	local ToggleCorner = Instance.new("UICorner") ToggleCorner.CornerRadius = UDim.new(0, 4) ToggleCorner.Parent = Toggle
+	local ToggleCorner = Instance.new("UICorner")
+	ToggleCorner.CornerRadius = UDim.new(0, 4)
+	ToggleCorner.Parent = Toggle
 
 	local Indicator = Instance.new("Frame")
 	Indicator.Size = UDim2.new(0, 14, 0, 14)
 	Indicator.Position = UDim2.new(0, 3, 0.5, -7)
 	Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Indicator.BorderSizePixel = 0
 	Indicator.Parent = Toggle
 
-	local IndicatorCorner = Instance.new("UICorner") IndicatorCorner.CornerRadius = UDim.new(0, 3) IndicatorCorner.Parent = Indicator
+	local IndicatorCorner = Instance.new("UICorner")
+	IndicatorCorner.CornerRadius = UDim.new(0, 3)
+	IndicatorCorner.Parent = Indicator
 
 	local Enabled = DefaultValue or false
 
@@ -1071,7 +1082,12 @@ local function CreateToggleWithValue(Name, Page, DefaultToggle, DefaultValue, Ca
 	local Container = Instance.new("Frame")
 	Container.Size = UDim2.new(1, -5, 0, 39)
 	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Container.BorderSizePixel = 0
 	Container.Parent = Page
+
+	local ContainerCorner = Instance.new("UICorner")
+	ContainerCorner.CornerRadius = UDim.new(0, 4)
+	ContainerCorner.Parent = Container
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -125, 1, 0)
@@ -1088,6 +1104,7 @@ local function CreateToggleWithValue(Name, Page, DefaultToggle, DefaultValue, Ca
 	Input.Size = UDim2.new(0, 55, 0, 25)
 	Input.Position = UDim2.new(1, -112, 0.5, -12)
 	Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Input.BorderSizePixel = 0
 	Input.Text = tostring(DefaultValue)
 	Input.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Input.TextSize = 12
@@ -1095,24 +1112,33 @@ local function CreateToggleWithValue(Name, Page, DefaultToggle, DefaultValue, Ca
 	Input.ClearTextOnFocus = false
 	Input.Parent = Container
 
-	local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0, 4) InputCorner.Parent = Input
+	local InputCorner = Instance.new("UICorner")
+	InputCorner.CornerRadius = UDim.new(0, 4)
+	InputCorner.Parent = Input
 
 	local ToggleButton = Instance.new("TextButton")
 	ToggleButton.Size = UDim2.new(0, 38, 0, 20)
 	ToggleButton.Position = UDim2.new(1, -48, 0.5, -10)
 	ToggleButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+	ToggleButton.BorderSizePixel = 0
 	ToggleButton.Text = ""
+	ToggleButton.AutoButtonColor = false
 	ToggleButton.Parent = Container
 
-	local ToggleCorner = Instance.new("UICorner") ToggleCorner.CornerRadius = UDim.new(0, 4) ToggleCorner.Parent = ToggleButton
+	local ToggleCorner = Instance.new("UICorner")
+	ToggleCorner.CornerRadius = UDim.new(0, 4)
+	ToggleCorner.Parent = ToggleButton
 
 	local Indicator = Instance.new("Frame")
 	Indicator.Size = UDim2.new(0, 14, 0, 14)
 	Indicator.Position = UDim2.new(0, 3, 0.5, -7)
 	Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Indicator.BorderSizePixel = 0
 	Indicator.Parent = ToggleButton
 
-	local IndicatorCorner = Instance.new("UICorner") IndicatorCorner.CornerRadius = UDim.new(0, 3) IndicatorCorner.Parent = Indicator
+	local IndicatorCorner = Instance.new("UICorner")
+	IndicatorCorner.CornerRadius = UDim.new(0, 3)
+	IndicatorCorner.Parent = Indicator
 
 	local Enabled = DefaultToggle or false
 
@@ -1153,7 +1179,12 @@ local function CreateInputWithButton(Name, Page, DefaultText, ButtonText, Callba
 	local Box = Instance.new("Frame")
 	Box.Size = UDim2.new(1, -5, 0, 48)
 	Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Box.BorderSizePixel = 0
 	Box.Parent = Page
+
+	local BoxCorner = Instance.new("UICorner")
+	BoxCorner.CornerRadius = UDim.new(0, 4)
+	BoxCorner.Parent = Box
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -170, 1, 0)
@@ -1170,6 +1201,7 @@ local function CreateInputWithButton(Name, Page, DefaultText, ButtonText, Callba
 	Input.Size = UDim2.new(0, 85, 0, 27)
 	Input.Position = UDim2.new(1, -155, 0.5, -13)
 	Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Input.BorderSizePixel = 0
 	Input.Text = DefaultText or ""
 	Input.PlaceholderText = "Nick"
 	Input.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1179,19 +1211,24 @@ local function CreateInputWithButton(Name, Page, DefaultText, ButtonText, Callba
 	Input.ClearTextOnFocus = false
 	Input.Parent = Box
 
-	local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0, 4) InputCorner.Parent = Input
+	local InputCorner = Instance.new("UICorner")
+	InputCorner.CornerRadius = UDim.new(0, 4)
+	InputCorner.Parent = Input
 
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(0, 60, 0, 27)
 	Button.Position = UDim2.new(1, -65, 0.5, -13)
 	Button.BackgroundColor3 = MAIN_COLOR
+	Button.BorderSizePixel = 0
 	Button.Text = ButtonText or "Fling"
 	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Button.TextSize = 12
 	Button.Font = Enum.Font.GothamBold
 	Button.Parent = Box
 
-	local ButtonCorner = Instance.new("UICorner") ButtonCorner.CornerRadius = UDim.new(0, 4) ButtonCorner.Parent = Button
+	local ButtonCorner = Instance.new("UICorner")
+	ButtonCorner.CornerRadius = UDim.new(0, 4)
+	ButtonCorner.Parent = Button
 
 	Button.MouseButton1Click:Connect(function()
 		if Destroyed then return end
@@ -1205,7 +1242,12 @@ local function CreateInputWithToggle(Name, Page, DefaultText, CallbackToggle)
 	local Container = Instance.new("Frame")
 	Container.Size = UDim2.new(1, -5, 0, 48)
 	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Container.BorderSizePixel = 0
 	Container.Parent = Page
+
+	local ContainerCorner = Instance.new("UICorner")
+	ContainerCorner.CornerRadius = UDim.new(0, 4)
+	ContainerCorner.Parent = Container
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -160, 1, 0)
@@ -1222,6 +1264,7 @@ local function CreateInputWithToggle(Name, Page, DefaultText, CallbackToggle)
 	Input.Size = UDim2.new(0, 90, 0, 27)
 	Input.Position = UDim2.new(1, -145, 0.5, -13)
 	Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Input.BorderSizePixel = 0
 	Input.Text = DefaultText or ""
 	Input.PlaceholderText = "Nick"
 	Input.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1231,24 +1274,33 @@ local function CreateInputWithToggle(Name, Page, DefaultText, CallbackToggle)
 	Input.ClearTextOnFocus = false
 	Input.Parent = Container
 
-	local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0, 4) InputCorner.Parent = Input
+	local InputCorner = Instance.new("UICorner")
+	InputCorner.CornerRadius = UDim.new(0, 4)
+	InputCorner.Parent = Input
 
 	local ToggleButton = Instance.new("TextButton")
 	ToggleButton.Size = UDim2.new(0, 38, 0, 20)
 	ToggleButton.Position = UDim2.new(1, -48, 0.5, -10)
 	ToggleButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+	ToggleButton.BorderSizePixel = 0
 	ToggleButton.Text = ""
+	ToggleButton.AutoButtonColor = false
 	ToggleButton.Parent = Container
 
-	local ToggleCorner = Instance.new("UICorner") ToggleCorner.CornerRadius = UDim.new(0, 4) ToggleCorner.Parent = ToggleButton
+	local ToggleCorner = Instance.new("UICorner")
+	ToggleCorner.CornerRadius = UDim.new(0, 4)
+	ToggleCorner.Parent = ToggleButton
 
 	local Indicator = Instance.new("Frame")
 	Indicator.Size = UDim2.new(0, 14, 0, 14)
 	Indicator.Position = UDim2.new(0, 3, 0.5, -7)
 	Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Indicator.BorderSizePixel = 0
 	Indicator.Parent = ToggleButton
 
-	local IndicatorCorner = Instance.new("UICorner") IndicatorCorner.CornerRadius = UDim.new(0, 3) IndicatorCorner.Parent = Indicator
+	local IndicatorCorner = Instance.new("UICorner")
+	IndicatorCorner.CornerRadius = UDim.new(0, 3)
+	IndicatorCorner.Parent = Indicator
 
 	local Enabled = false
 
@@ -1277,7 +1329,12 @@ local function CreateTeleportRow(Name, Page, CallbackGo, CallbackLoop)
 	local Container = Instance.new("Frame")
 	Container.Size = UDim2.new(1, -5, 0, 48)
 	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Container.BorderSizePixel = 0
 	Container.Parent = Page
+
+	local ContainerCorner = Instance.new("UICorner")
+	ContainerCorner.CornerRadius = UDim.new(0, 4)
+	ContainerCorner.Parent = Container
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -210, 1, 0)
@@ -1294,6 +1351,7 @@ local function CreateTeleportRow(Name, Page, CallbackGo, CallbackLoop)
 	Input.Size = UDim2.new(0, 75, 0, 27)
 	Input.Position = UDim2.new(1, -195, 0.5, -13)
 	Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Input.BorderSizePixel = 0
 	Input.Text = ""
 	Input.PlaceholderText = "Nick"
 	Input.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1303,31 +1361,39 @@ local function CreateTeleportRow(Name, Page, CallbackGo, CallbackLoop)
 	Input.ClearTextOnFocus = false
 	Input.Parent = Container
 
-	local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0, 4) InputCorner.Parent = Input
+	local InputCorner = Instance.new("UICorner")
+	InputCorner.CornerRadius = UDim.new(0, 4)
+	InputCorner.Parent = Input
 
 	local GoBtn = Instance.new("TextButton")
 	GoBtn.Size = UDim2.new(0, 45, 0, 27)
 	GoBtn.Position = UDim2.new(1, -115, 0.5, -13)
 	GoBtn.BackgroundColor3 = MAIN_COLOR
+	GoBtn.BorderSizePixel = 0
 	GoBtn.Text = "Go!"
 	GoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	GoBtn.TextSize = 11
 	GoBtn.Font = Enum.Font.GothamBold
 	GoBtn.Parent = Container
 
-	local GoCorner = Instance.new("UICorner") GoCorner.CornerRadius = UDim.new(0, 4) GoCorner.Parent = GoBtn
+	local GoCorner = Instance.new("UICorner")
+	GoCorner.CornerRadius = UDim.new(0, 4)
+	GoCorner.Parent = GoBtn
 
 	local LoopBtn = Instance.new("TextButton")
 	LoopBtn.Size = UDim2.new(0, 60, 0, 27)
 	LoopBtn.Position = UDim2.new(1, -65, 0.5, -13)
 	LoopBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+	LoopBtn.BorderSizePixel = 0
 	LoopBtn.Text = "Loop TP"
 	LoopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	LoopBtn.TextSize = 10
 	LoopBtn.Font = Enum.Font.GothamBold
 	LoopBtn.Parent = Container
 
-	local LoopCorner = Instance.new("UICorner") LoopCorner.CornerRadius = UDim.new(0, 4) LoopCorner.Parent = LoopBtn
+	local LoopCorner = Instance.new("UICorner")
+	LoopCorner.CornerRadius = UDim.new(0, 4)
+	LoopCorner.Parent = LoopBtn
 
 	local LoopEnabled = false
 
@@ -1354,7 +1420,12 @@ local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
 	local Box = Instance.new("Frame")
 	Box.Size = UDim2.new(1, -5, 0, 48)
 	Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Box.BorderSizePixel = 0
 	Box.Parent = Page
+
+	local BoxCorner = Instance.new("UICorner")
+	BoxCorner.CornerRadius = UDim.new(0, 4)
+	BoxCorner.Parent = Box
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -110, 1, 0)
@@ -1371,11 +1442,16 @@ local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
 	Button.Size = UDim2.new(0, 95, 0, 27)
 	Button.Position = UDim2.new(1, -107, 0.5, -13)
 	Button.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Button.BorderSizePixel = 0
 	Button.Text = DefaultOption
 	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Button.TextSize = 12
 	Button.Font = Enum.Font.Gotham
 	Button.Parent = Box
+
+	local BtnCorner = Instance.new("UICorner")
+	BtnCorner.CornerRadius = UDim.new(0, 4)
+	BtnCorner.Parent = Button
 
 	local CurrentIdx = 1
 	for i, opt in ipairs(Options) do
@@ -1398,7 +1474,12 @@ local function CreateKeybind(Name, Page, DefaultKey, Callback)
 	local Box = Instance.new("Frame")
 	Box.Size = UDim2.new(1, -5, 0, 48)
 	Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	Box.BorderSizePixel = 0
 	Box.Parent = Page
+
+	local BoxCorner = Instance.new("UICorner")
+	BoxCorner.CornerRadius = UDim.new(0, 4)
+	BoxCorner.Parent = Box
 
 	local Label = Instance.new("TextLabel")
 	Label.Size = UDim2.new(1, -110, 1, 0)
@@ -1415,11 +1496,16 @@ local function CreateKeybind(Name, Page, DefaultKey, Callback)
 	Button.Size = UDim2.new(0, 95, 0, 27)
 	Button.Position = UDim2.new(1, -107, 0.5, -13)
 	Button.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+	Button.BorderSizePixel = 0
 	Button.Text = DefaultKey and DefaultKey.Name or "None"
 	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Button.TextSize = 12
 	Button.Font = Enum.Font.Gotham
 	Button.Parent = Box
+
+	local BtnCorner = Instance.new("UICorner")
+	BtnCorner.CornerRadius = UDim.new(0, 4)
+	BtnCorner.Parent = Button
 
 	local Binding = false
 	local JustStarted = false
@@ -1429,11 +1515,14 @@ local function CreateKeybind(Name, Page, DefaultKey, Callback)
 		Binding = true
 		JustStarted = true
 		Button.Text = "Press Key..."
-		task.defer(function() JustStarted = false end)
+		task.defer(function()
+			JustStarted = false
+		end)
 	end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if not Binding or JustStarted then return end
+
 		if input.UserInputType == Enum.UserInputType.Keyboard then
 			Binding = false
 			if input.KeyCode == Enum.KeyCode.Escape then
@@ -1459,13 +1548,16 @@ local function CreateButton(Name, Page, Callback)
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(1, -5, 0, 39)
 	Button.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+	Button.BorderSizePixel = 0
 	Button.Text = Name
 	Button.TextColor3 = Color3.fromRGB(240, 240, 240)
 	Button.TextSize = 13
 	Button.Font = Enum.Font.GothamMedium
 	Button.Parent = Page
 
-	local Corner = Instance.new("UICorner") Corner.CornerRadius = UDim.new(0, 4) Corner.Parent = Button
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 4)
+	Corner.Parent = Button
 
 	Button.MouseButton1Click:Connect(function()
 		if Destroyed then return end
@@ -1477,7 +1569,9 @@ end
 
 -- FLING & HELPER FUNCTIONS
 local function Message(_Title, _Text, Time)
-	pcall(function() StarterGui:SetCore("SendNotification", {Title = _Title, Text = _Text, Duration = Time}) end)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {Title = _Title, Text = _Text, Duration = Time})
+	end)
 end
 
 local function GetPlayer(Name)
@@ -1488,8 +1582,12 @@ local function GetPlayer(Name)
 		return "all"
 	elseif Name == "random" then
 		local GetPlayers = Players:GetPlayers()
-		if table.find(GetPlayers, Player) then table.remove(GetPlayers, table.find(GetPlayers, Player)) end
-		if #GetPlayers > 0 then return GetPlayers[math.random(#GetPlayers)] end
+		if table.find(GetPlayers, Player) then 
+			table.remove(GetPlayers, table.find(GetPlayers, Player)) 
+		end
+		if #GetPlayers > 0 then
+			return GetPlayers[math.random(#GetPlayers)]
+		end
 		return nil
 	else
 		for _, x in ipairs(Players:GetPlayers()) do
@@ -1520,14 +1618,25 @@ local function SkidFling(TargetPlayer)
 	if Character and Humanoid and RootPart then
 		pcall(function() Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false) end)
 
-		if RootPart.Velocity.Magnitude < 50 then getgenv().OldPos = RootPart.CFrame end
-		if THumanoid and THumanoid.Sit then return Message("Error", "Targeting is sitting", 3) end
+		if RootPart.Velocity.Magnitude < 50 then
+			getgenv().OldPos = RootPart.CFrame
+		end
 
-		if THead then workspace.CurrentCamera.CameraSubject = THead
-		elseif Handle then workspace.CurrentCamera.CameraSubject = Handle
-		elseif THumanoid then workspace.CurrentCamera.CameraSubject = THumanoid end
+		if THumanoid and THumanoid.Sit then
+			return Message("Error", "Targeting is sitting", 3)
+		end
 
-		if not TCharacter:FindFirstChildWhichIsA("BasePart") then return end
+		if THead then
+			workspace.CurrentCamera.CameraSubject = THead
+		elseif Handle then
+			workspace.CurrentCamera.CameraSubject = Handle
+		elseif THumanoid then
+			workspace.CurrentCamera.CameraSubject = THumanoid
+		end
+
+		if not TCharacter:FindFirstChildWhichIsA("BasePart") then
+			return
+		end
         
 		local FPos = function(BasePart, Pos, Ang)
 			RootPart.CFrame = CFrame.new(BasePart.Position) * Pos * Ang
@@ -1545,28 +1654,56 @@ local function SkidFling(TargetPlayer)
 				if RootPart and THumanoid and Humanoid and Humanoid.Health > 0 then
 					if BasePart.Velocity.Magnitude < 50 then
 						Angle = Angle + 100
-						FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0)) task.wait()
-						FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0)) task.wait()
-						FPos(BasePart, CFrame.new(2.25, 1.5, -2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0)) task.wait()
-						FPos(BasePart, CFrame.new(-2.25, -1.5, 2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0)) task.wait()
+
+						FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+						task.wait()
+
+						FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+						task.wait()
+
+						FPos(BasePart, CFrame.new(2.25, 1.5, -2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+						task.wait()
+
+						FPos(BasePart, CFrame.new(-2.25, -1.5, 2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+						task.wait()
 					else
-						FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0)) task.wait()
-						FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0)) task.wait()
+						FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
+						task.wait()
+
+						FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
+						task.wait()
 					end
-				else break end
+				else
+					break
+				end
 			until not BasePart or BasePart.Velocity.Magnitude > 500 or BasePart.Parent ~= TargetPlayer.Character or TargetPlayer.Parent ~= Players or TargetPlayer.Character ~= TCharacter or THumanoid.Sit or Humanoid.Health <= 0 or tick() > Time + TimeToWait
 		end
         
 		workspace.FallenPartsDestroyHeight = 0/0
-		local BV = Instance.new("BodyVelocity") BV.Name = "EpixVel" BV.Parent = RootPart BV.Velocity = Vector3.new(9e6, 9e6, 9e6) BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+        
+		local BV = Instance.new("BodyVelocity")
+		BV.Name = "EpixVel"
+		BV.Parent = RootPart
+		BV.Velocity = Vector3.new(9e6, 9e6, 9e6)
+		BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+        
 		Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
         
 		if TRootPart and THead then
-			if (TRootPart.CFrame.p - THead.CFrame.p).Magnitude > 5 then SFBasePart(THead) else SFBasePart(TRootPart) end
-		elseif TRootPart and not THead then SFBasePart(TRootPart)
-		elseif not TRootPart and THead then SFBasePart(THead)
-		elseif not TRootPart and not THead and Accessory and Handle then SFBasePart(Handle)
-		else return Message("Error", "Target is missing body parts", 3) end
+			if (TRootPart.CFrame.p - THead.CFrame.p).Magnitude > 5 then
+				SFBasePart(THead)
+			else
+				SFBasePart(TRootPart)
+			end
+		elseif TRootPart and not THead then
+			SFBasePart(TRootPart)
+		elseif not TRootPart and THead then
+			SFBasePart(THead)
+		elseif not TRootPart and not THead and Accessory and Handle then
+			SFBasePart(Handle)
+		else
+			return Message("Error", "Target is missing body parts", 3)
+		end
         
 		BV:Destroy()
 		Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
@@ -1578,39 +1715,63 @@ local function SkidFling(TargetPlayer)
 				Character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, 0.5, 0))
 				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
 				for _, x in ipairs(Character:GetChildren()) do
-					if x:IsA("BasePart") then x.Velocity = Vector3.zero x.RotVelocity = Vector3.zero end
+					if x:IsA("BasePart") then
+						x.Velocity = Vector3.zero
+						x.RotVelocity = Vector3.zero
+					end
 				end
 			end
 			task.wait()
 		until not RootPart or not getgenv().OldPos or (RootPart.Position - getgenv().OldPos.p).Magnitude < 25
         
 		pcall(function() Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true) end)
-		if getgenv().FPDH then workspace.FallenPartsDestroyHeight = getgenv().FPDH end
+
+		if getgenv().FPDH then
+			workspace.FallenPartsDestroyHeight = getgenv().FPDH
+		end
 	else
 		return Message("Error", "Player character not found", 3)
 	end
 end
 
 local function ExecuteFling(TargetInput)
-	if not TargetInput or TargetInput == "" then return Message("Fling Error", "Please enter a target name or 'all'", 3) end
+	if not TargetInput or TargetInput == "" then
+		return Message("Fling Error", "Please enter a target name or 'all'", 3)
+	end
+
 	local LowerInput = TargetInput:lower()
 
 	if LowerInput == "all" or LowerInput == "others" then
-		for _, p in ipairs(Players:GetPlayers()) do if p ~= Player then SkidFling(p) end end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= Player then
+				SkidFling(p)
+			end
+		end
 	else
 		local TargetObj = GetPlayer(TargetInput)
 		if TargetObj == "all" then
-			for _, p in ipairs(Players:GetPlayers()) do if p ~= Player then SkidFling(p) end end
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= Player then
+					SkidFling(p)
+				end
+			end
 		elseif typeof(TargetObj) == "Instance" and TargetObj:IsA("Player") then
-			if TargetObj.UserId == 2245662672 then return Message("Error", "This user is whitelisted!", 3) end
+			if TargetObj.UserId == 2245662672 then
+				return Message("Error", "This user is whitelisted!", 3)
+			end
 			SkidFling(TargetObj)
-		else Message("Error", "Username Invalid", 3) end
+		else
+			Message("Error", "Username Invalid", 3)
+		end
 	end
 end
 
--- SISTEMAS E LOGICAS
+-- LOGIC & OTHER SYSTEMS
 local NoFallConnection
-local function StopNoFall() if NoFallConnection then NoFallConnection:Disconnect() NoFallConnection = nil end end
+local function StopNoFall()
+	if NoFallConnection then NoFallConnection:Disconnect() NoFallConnection = nil end
+end
+
 local function StartNoFall()
 	StopNoFall()
 	NoFallConnection = RunService.PreRender:Connect(function()
@@ -1623,33 +1784,49 @@ end
 
 local LastSafeCFrame = nil
 local AntiVoidConnection
-local function StopAntiVoid() if AntiVoidConnection then AntiVoidConnection:Disconnect() AntiVoidConnection = nil end end
+
+local function StopAntiVoid()
+	if AntiVoidConnection then AntiVoidConnection:Disconnect() AntiVoidConnection = nil end
+end
+
 local function StartAntiVoid()
 	StopAntiVoid()
 	AntiVoidConnection = RunService.Heartbeat:Connect(function()
 		if Destroyed or not Settings.AntiVoid or not Character or not RootPart or not Humanoid then return end
-		if Humanoid.FloorMaterial ~= Enum.Material.Air and RootPart.Velocity.Y > -10 then LastSafeCFrame = RootPart.CFrame end
+
+		if Humanoid.FloorMaterial ~= Enum.Material.Air and RootPart.Velocity.Y > -10 then
+			LastSafeCFrame = RootPart.CFrame
+		end
 
 		local fpdh = workspace.FallenPartsDestroyHeight
 		local isFallingOut = false
 		if typeof(fpdh) == "number" and fpdh == fpdh then
-			if RootPart.Position.Y <= (fpdh + 25) or RootPart.Position.Y <= -250 then isFallingOut = true end
+			if RootPart.Position.Y <= (fpdh + 25) or RootPart.Position.Y <= -250 then
+				isFallingOut = true
+			end
 		else
-			if RootPart.Position.Y <= -250 then isFallingOut = true end
+			if RootPart.Position.Y <= -250 then
+				isFallingOut = true
+			end
 		end
 
 		if isFallingOut then
 			RootPart.Velocity = Vector3.zero
 			RootPart.RotVelocity = Vector3.zero
-			if LastSafeCFrame then RootPart.CFrame = LastSafeCFrame + Vector3.new(0, 3, 0)
-			else RootPart.CFrame = CFrame.new(RootPart.Position.X, 100, RootPart.Position.Z) end
+			if LastSafeCFrame then
+				RootPart.CFrame = LastSafeCFrame + Vector3.new(0, 3, 0)
+			else
+				RootPart.CFrame = CFrame.new(RootPart.Position.X, 100, RootPart.Position.Z)
+			end
 			CustomNotify("Anti Void Rescued You!", Color3.fromRGB(100, 255, 100))
 		end
 	end)
 end
 
 local AntiAFKConnection
-local function StopAntiAFK() if AntiAFKConnection then AntiAFKConnection:Disconnect() AntiAFKConnection = nil end end
+local function StopAntiAFK()
+	if AntiAFKConnection then AntiAFKConnection:Disconnect() AntiAFKConnection = nil end
+end
 local function StartAntiAFK()
 	StopAntiAFK()
 	AntiAFKConnection = Player.Idled:Connect(function()
@@ -1662,17 +1839,23 @@ end
 
 local ChatLogConnections = {}
 local function StopChatLogs()
-    for _, conn in ipairs(ChatLogConnections) do pcall(function() conn:Disconnect() end) end
+    for _, conn in ipairs(ChatLogConnections) do 
+        pcall(function() conn:Disconnect() end) 
+    end
     table.clear(ChatLogConnections)
 end
 
 local function StartChatLogs()
     StopChatLogs()
+
     local function HookPlayer(p)
         if p == Player then return end
-        local conn = p.Chatted:Connect(function(msg) AddChatLog(p, msg) end)
+        local conn = p.Chatted:Connect(function(msg)
+            AddChatLog(p, msg)
+        end)
         table.insert(ChatLogConnections, conn)
     end
+
     for _, p in ipairs(Players:GetPlayers()) do HookPlayer(p) end
     local pConn = Players.PlayerAdded:Connect(HookPlayer)
     table.insert(ChatLogConnections, pConn)
@@ -1683,7 +1866,9 @@ local function StartChatLogs()
                 if not Settings.ChatLogs or Destroyed then return end
                 if textChatMessage.TextSource then
                     local senderPlayer = Players:GetPlayerByUserId(textChatMessage.TextSource.UserId)
-                    if senderPlayer and senderPlayer ~= Player then AddChatLog(senderPlayer, textChatMessage.Text) end
+                    if senderPlayer and senderPlayer ~= Player then
+                        AddChatLog(senderPlayer, textChatMessage.Text)
+                    end
                 end
             end)
             table.insert(ChatLogConnections, tcConn)
@@ -1706,7 +1891,9 @@ local function StopAntiFling()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= Player and p.Character then
 			for _, part in ipairs(p.Character:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = true end
+				if part:IsA("BasePart") then
+					part.CanCollide = true
+				end
 			end
 		end
 	end
@@ -1743,7 +1930,6 @@ local function StartNoclip()
 		end
 	end)
 end
-
 local function DisableNoclip()
 	if NoclipConnection then NoclipConnection:Disconnect() NoclipConnection = nil end
 	if Character then
@@ -1762,7 +1948,6 @@ local function StopFly()
 	if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
 	if FlyVelocity then FlyVelocity:Destroy() FlyVelocity = nil end
 end
-
 local function StartFly()
 	if not RootPart then return end
 	StopFly()
@@ -1802,6 +1987,7 @@ local function StartFlyCar()
 	end
 
 	local Root = Seat.Parent:IsA("Model") and (Seat.Parent.PrimaryPart or Seat) or Seat
+
 	FlyCarVelocity = Instance.new("BodyVelocity")
 	FlyCarVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
 	FlyCarVelocity.Velocity = Vector3.zero
@@ -1821,6 +2007,7 @@ local function StartFlyCar()
 
 		local CamCF = workspace.CurrentCamera.CFrame
 		local Direction = Vector3.zero
+
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) then Direction += CamCF.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then Direction -= CamCF.LookVector end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) then Direction -= CamCF.RightVector end
@@ -1838,7 +2025,9 @@ local SpectateConnection, SpectateTargetPlayer
 local function StopSpectate()
 	if SpectateConnection then SpectateConnection:Disconnect() SpectateConnection = nil end
 	SpectateTargetPlayer = nil
-	if Humanoid then workspace.CurrentCamera.CameraSubject = Humanoid end
+	if Humanoid then
+		workspace.CurrentCamera.CameraSubject = Humanoid
+	end
 end
 
 local function StartSpectate(targetName)
@@ -1847,10 +2036,15 @@ local function StartSpectate(targetName)
 	if typeof(target) == "Instance" and target:IsA("Player") and target.Character then
 		SpectateTargetPlayer = target
 		SpectateConnection = RunService.RenderStepped:Connect(function()
-			if Destroyed or not Settings.Spectating then StopSpectate() return end
+			if Destroyed or not Settings.Spectating then
+				StopSpectate()
+				return
+			end
 			if SpectateTargetPlayer and SpectateTargetPlayer.Character and SpectateTargetPlayer.Character:FindFirstChildOfClass("Humanoid") then
 				workspace.CurrentCamera.CameraSubject = SpectateTargetPlayer.Character:FindFirstChildOfClass("Humanoid")
-			else StopSpectate() end
+			else
+				StopSpectate()
+			end
 		end)
 	else
 		Message("Spectate", "Player not found", 3)
@@ -1868,8 +2062,12 @@ local function TeleportToPlayer(targetName)
 	local target = GetPlayer(targetName)
 	if typeof(target) == "Instance" and target:IsA("Player") and target.Character then
 		local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
-		if RootPart and tRoot then RootPart.CFrame = tRoot.CFrame * CFrame.new(0, 0, 3) end
-	else Message("Teleport", "Player not found", 3) end
+		if RootPart and tRoot then
+			RootPart.CFrame = tRoot.CFrame * CFrame.new(0, 0, 3)
+		end
+	else
+		Message("Teleport", "Player not found", 3)
+	end
 end
 
 local function StartLoopTP(targetName)
@@ -1878,9 +2076,14 @@ local function StartLoopTP(targetName)
 	if typeof(target) == "Instance" and target:IsA("Player") then
 		LoopTPTargetPlayer = target
 		LoopTPConnection = RunService.Heartbeat:Connect(function()
-			if Destroyed or not Settings.LoopTP or not LoopTPTargetPlayer or not LoopTPTargetPlayer.Character then StopLoopTP() return end
+			if Destroyed or not Settings.LoopTP or not LoopTPTargetPlayer or not LoopTPTargetPlayer.Character then
+				StopLoopTP()
+				return
+			end
 			local tRoot = LoopTPTargetPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if RootPart and tRoot then RootPart.CFrame = tRoot.CFrame * CFrame.new(0, 0, 3) end
+			if RootPart and tRoot then
+				RootPart.CFrame = tRoot.CFrame * CFrame.new(0, 0, 3)
+			end
 		end)
 	else
 		Message("Loop TP", "Player not found", 3)
@@ -1889,7 +2092,9 @@ local function StartLoopTP(targetName)
 end
 
 local FloatVelocity
-local function StopFloat() if FloatVelocity then FloatVelocity:Destroy() FloatVelocity = nil end end
+local function StopFloat()
+	if FloatVelocity then FloatVelocity:Destroy() FloatVelocity = nil end
+end
 local function UpdateFloat()
 	if not Settings.Float or not RootPart then StopFloat() return end
 	if not FloatVelocity then
@@ -1929,6 +2134,7 @@ local function UpdateFreecam()
         local CamCF = workspace.CurrentCamera.CFrame
         local Speed = 1
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then Speed = 3 end
+        
         local Dir = Vector3.zero
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then Dir = Dir + CamCF.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then Dir = Dir - CamCF.LookVector end
@@ -1936,6 +2142,7 @@ local function UpdateFreecam()
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then Dir = Dir + CamCF.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.E) then Dir = Dir + Vector3.new(0, 1, 0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.Q) then Dir = Dir - Vector3.new(0, 1, 0) end
+        
         FreecamPart.CFrame = FreecamPart.CFrame + (Dir * Speed)
     end
 end
@@ -1943,11 +2150,18 @@ end
 local FullbrightConnection
 local function ToggleFullbright(v)
     Settings.Fullbright = v
-    if FullbrightConnection then FullbrightConnection:Disconnect() FullbrightConnection = nil end
+    if FullbrightConnection then
+        FullbrightConnection:Disconnect()
+        FullbrightConnection = nil
+    end
+
     if v then
         FullbrightConnection = RunService.RenderStepped:Connect(function()
             if not Settings.Fullbright or Destroyed then
-                if FullbrightConnection then FullbrightConnection:Disconnect() FullbrightConnection = nil end
+                if FullbrightConnection then
+                    FullbrightConnection:Disconnect()
+                    FullbrightConnection = nil
+                end
                 return
             end
             Lighting.Ambient = Color3.fromRGB(160, 160, 160)
@@ -1969,7 +2183,9 @@ end
 
 local function Toggle3DRendering(v)
 	Settings.Render3D = v
-	pcall(function() RunService:Set3dRenderingEnabled(v) end)
+	pcall(function()
+		RunService:Set3dRenderingEnabled(v)
+	end)
 end
 
 UserInputService.InputBegan:Connect(function(Input, GameProcessed)
@@ -1982,7 +2198,9 @@ UserInputService.InputBegan:Connect(function(Input, GameProcessed)
 	end
 	if Settings.GUIKeybind and Input.KeyCode == Settings.GUIKeybind then 
         Main.Visible = not Main.Visible 
-        if Settings.ChatLogs then ChatLogGui.Visible = Main.Visible end
+        if Settings.ChatLogs then
+            ChatLogGui.Visible = Main.Visible
+        end
     end
 end)
 
@@ -2091,7 +2309,7 @@ local function ApplyTeleportQueue()
 	end
 end
 
--- AMBIENTE COMPARTILHADO PARA OS MODULOS DO GITHUB
+-- AMBIENTE COMPARTILHADO COM OS MODULOS
 getgenv().ToxEnv = {
     Settings = Settings,
     Pages = Pages,
@@ -2128,21 +2346,21 @@ getgenv().ToxEnv = {
     Players = Players, TeleportService = TeleportService
 }
 
--- CARREGAMENTO DOS SCRIPTS SEPARADOS
+-- CARREGAMENTO DOS SCRIPTS DO GITHUB
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer.lua"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals.lua"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat.lua"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript.lua"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
 
--- INICIALIZAÇÕES
+-- INICIALIZACAO DE SISTEMAS
 if Settings.AntiFling then StartAntiFling() end
 if Settings.AntiAFK then StartAntiAFK() end
 if Settings.AntiVoid then StartAntiVoid() end
 if Settings.NoFallDamage then StartNoFall() end
 if Settings.ChatLogs then StartChatLogs() ChatLogGui.Visible = true end
 
--- SPLASH SCREEN ANIMATION
+-- ANIMACAO DE CARREGAMENTO
 local function ShowCenterLoadSequence()
     local SplashFrame = Instance.new("Frame")
     SplashFrame.Size = UDim2.new(0, 320, 0, 95)
