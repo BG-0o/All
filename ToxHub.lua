@@ -1,21 +1,20 @@
--- ToxHub.lua (Script Principal / Interface Base)
+-- ToxHub.lua
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
--- Carrega Configurações
 local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
 
 local ToxHub = {
-    Version = "2.0.0",
+    Version = "2.1.0",
     Windows = {},
     Tabs = {},
     CurrentTab = nil
 }
 
--- Função para arrastar janelas
-local function EnableDrag(frame, handle)
+-- Torna qualquer Frame arrastável
+local function MakeDraggable(frame, handle)
     handle = handle or frame
     local dragging, dragInput, dragStart, startPos
 
@@ -47,10 +46,17 @@ local function EnableDrag(frame, handle)
     end)
 end
 
--- Adiciona botão de minimizar ("-") a qualquer GUI criada
+-- Botão de Minimizar ("-") Universal para qualquer Janela/GUI criada
 function ToxHub:AddMinimizeButton(windowFrame, contentFrame)
-    local header = windowFrame:FindFirstChild("Header") or windowFrame:FindFirstChild("TitleBar")
-    if not header then return end
+    local header = windowFrame:FindFirstChild("Header") or windowFrame:FindFirstChild("TitleBar") or windowFrame:FindFirstChild("TopBar")
+    if not header then
+        header = Instance.new("Frame")
+        header.Name = "Header"
+        header.Size = UDim2.new(1, 0, 0, 30)
+        header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        header.BorderSizePixel = 0
+        header.Parent = windowFrame
+    end
 
     if header:FindFirstChild("MinimizeBtn") then return end
 
@@ -88,17 +94,16 @@ function ToxHub:AddMinimizeButton(windowFrame, contentFrame)
     end)
 end
 
--- Criar ScreenGui Base
+-- ScreenGui Principal
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ToxHub_MainGUI"
 ScreenGui.ResetOnSpawn = false
 pcall(function() ScreenGui.Parent = CoreGui end)
 
--- Frame Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 550, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 560, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -280, 0.5, -190)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
@@ -107,7 +112,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 8)
 MainCorner.Parent = MainFrame
 
--- Header
 local Header = Instance.new("Frame")
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 32)
@@ -124,16 +128,15 @@ Title.Name = "Title"
 Title.Size = UDim2.new(1, -60, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ToxHub | Multi-Script Engine v2.0"
+Title.Text = "ToxHub | Multi-Script Suite v2.1"
 Title.TextColor3 = Color3.fromRGB(0, 200, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
-EnableDrag(MainFrame, Header)
+MakeDraggable(MainFrame, Header)
 
--- Conteúdo Principal
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Name = "ContentContainer"
 ContentContainer.Size = UDim2.new(1, 0, 1, -32)
@@ -141,7 +144,6 @@ ContentContainer.Position = UDim2.new(0, 0, 0, 32)
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Parent = MainFrame
 
--- Sidebar de Abas
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0, 130, 1, 0)
@@ -160,7 +162,6 @@ SidebarPadding.PaddingLeft = UDim.new(0, 6)
 SidebarPadding.PaddingRight = UDim.new(0, 6)
 SidebarPadding.Parent = Sidebar
 
--- Container das Abas
 local TabContainer = Instance.new("Frame")
 TabContainer.Name = "TabContainer"
 TabContainer.Size = UDim2.new(1, -130, 1, 0)
@@ -171,7 +172,6 @@ TabContainer.Parent = ContentContainer
 -- Aplica o Botão de Minimizar na Janela Principal
 ToxHub:AddMinimizeButton(MainFrame, ContentContainer)
 
--- Criador de Abas
 function ToxHub:CreateTab(name)
     local tabBtn = Instance.new("TextButton")
     tabBtn.Name = name .. "TabBtn"
@@ -225,7 +225,7 @@ function ToxHub:CreateTab(name)
     return tabFrame
 end
 
--- Carregar Módulos do GitHub
+-- Carregar Módulos dos Links
 ToxHub.Modules = {
     Combat = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat.lua"))(),
     Player = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer.lua"))(),
@@ -235,7 +235,7 @@ ToxHub.Modules = {
     Config = ToxConfig
 }
 
--- Inicialização dos Módulos nas Abas
+-- Inicializar Abas
 local combatTab = ToxHub:CreateTab("COMBAT")
 local playerTab = ToxHub:CreateTab("PLAYER")
 local visualsTab = ToxHub:CreateTab("VISUALS")
