@@ -7,7 +7,7 @@ local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-
 
 local ToxCombat = {}
 
--- FIX: Busca de Alvos e Fling para "ALL", "random", "others", usernames e display names
+-- FIX: Busca de Alvos Universal
 function ToxCombat:GetPlayer(Name)
 	if not Name or Name == "" then return nil end
 	Name = string.lower(Name)
@@ -95,59 +95,9 @@ function ToxCombat:ExecuteFling(TargetInput, hub)
 end
 
 function ToxCombat:Init(parentPage, hub)
-    local Box = Instance.new("Frame")
-	Box.Size = UDim2.new(1, -5, 0, 48)
-	Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-	Box.BorderSizePixel = 0
-	Box.Parent = parentPage
-
-	local Label = Instance.new("TextLabel")
-	Label.Size = UDim2.new(1, -170, 1, 0)
-	Label.Position = UDim2.new(0, 12, 0, 0)
-	Label.BackgroundTransparency = 1
-	Label.Text = "Target Fling"
-	Label.TextColor3 = Color3.fromRGB(240, 240, 240)
-	Label.TextSize = 13
-	Label.Font = Enum.Font.GothamMedium
-	Label.TextXAlignment = Enum.TextXAlignment.Left
-	Label.Parent = Box
-
-	local Input = Instance.new("TextBox")
-	Input.Size = UDim2.new(0, 85, 0, 27)
-	Input.Position = UDim2.new(1, -155, 0.5, -13)
-	Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
-	Input.BorderSizePixel = 0
-	Input.Text = ""
-	Input.PlaceholderText = "Nick/ALL/Random"
-	Input.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Input.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-	Input.TextSize = 11
-	Input.Font = Enum.Font.Gotham
-	Input.ClearTextOnFocus = false
-	Input.Parent = Box
-
-	local InputCorner = Instance.new("UICorner")
-	InputCorner.CornerRadius = UDim.new(0, 4)
-	InputCorner.Parent = Input
-
-	local Button = Instance.new("TextButton")
-	Button.Size = UDim2.new(0, 60, 0, 27)
-	Button.Position = UDim2.new(1, -65, 0.5, -13)
-	Button.BackgroundColor3 = Color3.fromRGB(9, 0, 136)
-	Button.BorderSizePixel = 0
-	Button.Text = "Fling"
-	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Button.TextSize = 12
-	Button.Font = Enum.Font.GothamBold
-	Button.Parent = Box
-
-	local ButtonCorner = Instance.new("UICorner")
-	ButtonCorner.CornerRadius = UDim.new(0, 4)
-	ButtonCorner.Parent = Button
-
-	Button.MouseButton1Click:Connect(function()
-		self:ExecuteFling(Input.Text, hub)
-	end)
+    hub:CreateInputWithButton("Target Fling", parentPage, "", "Fling", function(text)
+        self:ExecuteFling(text, hub)
+    end)
 end
 
 return ToxCombat
