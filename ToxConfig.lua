@@ -2,7 +2,7 @@
 local HttpService = game:GetService("HttpService")
 
 local ToxConfig = {}
-ToxConfig.FolderName = "ToxV1_Data"
+ToxConfig.FolderName = "ToxHub_Data"
 ToxConfig.ConfigFilePath = ToxConfig.FolderName .. "/config.json"
 
 ToxConfig.ColorMap = {
