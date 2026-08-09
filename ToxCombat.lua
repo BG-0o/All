@@ -51,7 +51,6 @@ Settings.Combat = Settings.Combat or {
 }
 
 local Combat = Settings.Combat
-local Connections = {}
 
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1.5
@@ -60,7 +59,7 @@ FOVCircle.Filled = false
 FOVCircle.Transparency = 1
 FOVCircle.Visible = false
 
-local fovConn = RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     if env.Destroyed then
         FOVCircle.Visible = false
         pcall(function() FOVCircle:Remove() end)
@@ -82,7 +81,6 @@ local fovConn = RunService.RenderStepped:Connect(function()
         FOVCircle.Visible = false
     end
 end)
-table.insert(Connections, fovConn)
 
 local function GetTargetPartFromModel(model, partName)
     if not model then return nil end
@@ -121,7 +119,6 @@ local function GetAimLockTargetPart()
         if player ~= LocalPlayer and player.Character then
             local pName = player.Name:lower()
             local dName = player.DisplayName:lower()
-            
             if pName:sub(1, #query) == query or dName:sub(1, #query) == query or pName:find(query, 1, true) or dName:find(query, 1, true) then
                 return GetTargetPartFromModel(player.Character, Combat.AimPart)
             end
@@ -185,18 +182,16 @@ end
 local isLeftClicking = false
 local isCustomKeyHolding = false
 
-local inputBegan = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed or env.Destroyed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 then isLeftClicking = true end
     if Combat.AimKey and (input.KeyCode == Combat.AimKey or input.UserInputType == Combat.AimKey) then isCustomKeyHolding = true end
 end)
-table.insert(Connections, inputBegan)
 
-local inputEnded = UserInputService.InputEnded:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then isLeftClicking = false end
     if Combat.AimKey and (input.KeyCode == Combat.AimKey or input.UserInputType == Combat.AimKey) then isCustomKeyHolding = false end
 end)
-table.insert(Connections, inputEnded)
 
 local function ShouldAim()
     if not Combat.Aimbot then return false end
@@ -205,7 +200,7 @@ local function ShouldAim()
     return true
 end
 
-local aimbotLoop = RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     if env.Destroyed then return end
 
     if ShouldAim() then
@@ -247,7 +242,6 @@ local aimbotLoop = RunService.RenderStepped:Connect(function()
         end
     end
 end)
-table.insert(Connections, aimbotLoop)
 
 CreateToggle("Aimbot", CombatPage, Combat.Aimbot, function(v) Combat.Aimbot = v end)
 CreateToggle("Use Left Click", CombatPage, Combat.UseLeftClick, function(v) Combat.UseLeftClick = v end)
