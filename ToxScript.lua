@@ -1,33 +1,39 @@
 -- ToxScript.lua
 local ToxScript = {}
 
-function ToxScript:Init(parentFrame, hub)
-    local scripts = {
-        { Name = "Infinite Yield", Url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source" },
-        { Name = "Dark Dex Explorer", Url = "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua" },
-        { Name = "SimpleSpy Remote", Url = "https://raw.githubusercontent.com/exunys/SimpleSpy/main/SimpleSpy.lua" }
-    }
+function ToxScript:Init(parentPage, hub)
+    local function CreateButton(Name, Page, Callback)
+        local Button = Instance.new("TextButton")
+        Button.Size = UDim2.new(1, -5, 0, 39)
+        Button.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+        Button.BorderSizePixel = 0
+        Button.Text = Name
+        Button.TextColor3 = Color3.fromRGB(240, 240, 240)
+        Button.TextSize = 13
+        Button.Font = Enum.Font.GothamMedium
+        Button.Parent = Page
 
-    for _, s in ipairs(scripts) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -10, 0, 32)
-        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.Text = "Executar " .. s.Name
-        btn.Font = Enum.Font.SourceSansBold
-        btn.TextSize = 14
-        btn.Parent = parentFrame
+        local Corner = Instance.new("UICorner")
+        Corner.CornerRadius = UDim.new(0, 4)
+        Corner.Parent = Button
 
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 4)
-        corner.Parent = btn
-
-        btn.MouseButton1Click:Connect(function()
-            pcall(function()
-                loadstring(game:HttpGet(s.Url))()
-            end)
+        Button.MouseButton1Click:Connect(function()
+            Callback()
         end)
+        return Button
     end
+
+    CreateButton("Infinite Yield", parentPage, function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end)
+
+    CreateButton("FE Emotes", parentPage, function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/VenezzaX/Usefulthings/refs/heads/main/FeEmotes.lua", true))()
+    end)
+
+    CreateButton("Wall Walk", parentPage, function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
+    end)
 end
 
 return ToxScript
