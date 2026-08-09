@@ -1,238 +1,98 @@
--- ========================================================
--- ToxPlayer.lua - Aba PLAYER
--- ========================================================
-
-local env = getgenv().ToxEnv
-if not env then return end
-
-local PlayerPage = env.PlayerPage
-local Settings = env.Settings
-
-local CreateToggle = env.CreateToggle
-local CreateToggleWithValue = env.CreateToggleWithValue
-local CreateTeleportRow = env.CreateTeleportRow
-
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+-- ToxPlayer.lua (Módulo Player com Anti-Void Corrigido)
 local Players = game:GetService("Players")
-local LocalPlayer = env.Player
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
-local Humanoid, RootPart
+local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
 
-local function GetCharacter()
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    Humanoid = char:WaitForChild("Humanoid")
-    RootPart = char:WaitForChild("HumanoidRootPart")
-    return char
-end
-GetCharacter()
-LocalPlayer.CharacterAdded:Connect(GetCharacter)
+local ToxPlayer = {
+    AntiVoidConnection = nil,
+    LastSafeCFrame = nil,
+    NoclipConn = nil
+}
 
--- SPEED & JUMP POWER
-RunService.RenderStepped:Connect(function()
-    if env.Destroyed or not Humanoid then return end
-    if Settings.Speed then Humanoid.WalkSpeed = Settings.SpeedValue end
-    if Settings.Jump then 
-        Humanoid.UseJumpPower = true 
-        Humanoid.JumpPower = Settings.JumpValue 
+-- FIX: Anti Void Totalmente Operacional
+function ToxPlayer:SetAntiVoid(enabled)
+    ToxConfig:Set("Player", "AntiVoid", enabled)
+    
+    if self.AntiVoidConnection then
+        self.AntiVoidConnection:Disconnect()
+        self.AntiVoidConnection = nil
     end
-end)
 
--- INFINITE JUMP
-UserInputService.JumpRequest:Connect(function()
-    if not env.Destroyed and Settings.InfiniteJump and Humanoid then
-        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
+    if enabled then
+        self.AntiVoidConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
 
--- NOCLIP (RESTAURA COLISÃO CORRETAMENTE AO DESLIGAR)
-local noclipConn
-local function StartNoclip()
-    if noclipConn then noclipConn:Disconnect() end
-    noclipConn = RunService.Stepped:Connect(function()
-        if env.Destroyed or not Settings.Noclip or not LocalPlayer.Character then
-            if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-            return
-        end
-        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
-        end
-    end)
-end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local hum = char:FindFirstChild("Humanoid")
+            if not hrp or not hum then return end
 
-local function DisableNoclip()
-    if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-    if LocalPlayer.Character then
-        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                if part.Name == "HumanoidRootPart" or part.Name == "Torso" or part.Name == "UpperTorso" or part.Name == "LowerTorso" or part.Name == "Head" then
-                    part.CanCollide = true
+            -- Atualiza posição segura quando grounded
+            if hum.FloorMaterial ~= Enum.Material.Air and hrp.Position.Y > (workspace.FallenPartsDestroyHeight + 25) then
+                self.LastSafeCFrame = hrp.CFrame
+            end
+
+            -- Intercepta Queda no Void
+            local voidThreshold = workspace.FallenPartsDestroyHeight + 15
+            if hrp.Position.Y <= voidThreshold then
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+                
+                if self.LastSafeCFrame then
+                    hrp.CFrame = self.LastSafeCFrame + Vector3.new(0, 4, 0)
+                else
+                    hrp.CFrame = CFrame.new(0, 50, 0)
                 end
             end
-        end
+        end)
     end
 end
 
--- FLY LOGIC
-local flyVel
-RunService.RenderStepped:Connect(function()
-    if not env.Destroyed and Settings.Fly and RootPart then
-        if not flyVel or flyVel.Parent ~= RootPart then
-            flyVel = Instance.new("BodyVelocity")
-            flyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-            flyVel.Parent = RootPart
-        end
-        local Cam = workspace.CurrentCamera
-        local Dir = Vector3.zero
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then Dir += Cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then Dir -= Cam.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then Dir -= Cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then Dir += Cam.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then Dir += Vector3.new(0, 1, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then Dir -= Vector3.new(0, 1, 0) end
-        
-        flyVel.Velocity = Dir.Magnitude > 0 and (Dir.Unit * (Settings.FlySpeed * 10)) or Vector3.zero
-    else
-        if flyVel then flyVel:Destroy(); flyVel = nil end
+function ToxPlayer:SetWalkSpeed(val)
+    ToxConfig:Set("Player", "WalkSpeed", val)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = val
     end
-end)
-
--- FLY CAR LOGIC COM NOTIFICAÇÃO SE NÃO ESTIVER SENTADO
-local flyCarVel, flyCarGyro, flyCarConn
-local function StopFlyCar()
-	if flyCarConn then flyCarConn:Disconnect(); flyCarConn = nil end
-	if flyCarVel then flyCarVel:Destroy(); flyCarVel = nil end
-	if flyCarGyro then flyCarGyro:Destroy(); flyCarGyro = nil end
 end
 
-local function StartFlyCar()
-	StopFlyCar()
-	local Seat = Humanoid and Humanoid.SeatPart
-	if not Seat then
-		if env.Message then env.Message("Flycar Error", "You must be sitting in a vehicle seat!", 3) end
-		Settings.FlyCar = false
-		return
-	end
-
-	local Root = Seat.Parent:IsA("Model") and (Seat.Parent.PrimaryPart or Seat) or Seat
-	flyCarVel = Instance.new("BodyVelocity"); flyCarVel.MaxForce = Vector3.new(1e9, 1e9, 1e9); flyCarVel.Parent = Root
-	flyCarGyro = Instance.new("BodyGyro"); flyCarGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9); flyCarGyro.CFrame = Root.CFrame; flyCarGyro.Parent = Root
-
-	flyCarConn = RunService.RenderStepped:Connect(function()
-		if env.Destroyed or not Settings.FlyCar or not Seat or not Seat.Parent then
-			StopFlyCar()
-			Settings.FlyCar = false
-			return
-		end
-
-		local CamCF = workspace.CurrentCamera.CFrame
-		local Direction = Vector3.zero
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then Direction += CamCF.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then Direction -= CamCF.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then Direction -= CamCF.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then Direction += CamCF.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then Direction += Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then Direction -= Vector3.new(0, 1, 0) end
-
-		if Direction.Magnitude > 0 then Direction = Direction.Unit end
-		flyCarVel.Velocity = Direction * (Settings.FlyCarSpeed * 10)
-		flyCarGyro.CFrame = CamCF
-	end)
-end
-
--- FLOAT LOGIC
-local floatVel
-RunService.RenderStepped:Connect(function()
-    if not env.Destroyed and Settings.Float and RootPart then
-        if not floatVel or floatVel.Parent ~= RootPart then
-            floatVel = Instance.new("BodyVelocity")
-            floatVel.MaxForce = Vector3.new(0, 100000, 0)
-            floatVel.Parent = RootPart
-        end
-        local YVel = 0
-        if UserInputService:IsKeyDown(Settings.UpBind) then YVel += Settings.FloatStrength end
-        if UserInputService:IsKeyDown(Settings.DownBind) then YVel -= Settings.FloatStrength end
-        floatVel.Velocity = Vector3.new(0, YVel, 0)
-    else
-        if floatVel then floatVel:Destroy(); floatVel = nil end
+function ToxPlayer:SetJumpPower(val)
+    ToxConfig:Set("Player", "JumpPower", val)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.UseJumpPower = true
+        char.Humanoid.JumpPower = val
     end
-end)
-
--- TELEPORT LOGIC
-local loopTPConn, loopTPPlayer
-local function GetPlayerByNick(Name)
-	if not Name or Name == "" then return nil end
-	Name = Name:lower()
-	for _, x in ipairs(Players:GetPlayers()) do
-		if x ~= LocalPlayer then
-			if x.Name:lower():sub(1, #Name) == Name or x.DisplayName:lower():sub(1, #Name) == Name then
-				return x
-			end
-		end
-	end
-	return nil
 end
 
-local function TeleportToPlayer(targetName)
-	local target = GetPlayerByNick(targetName)
-	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and RootPart then
-		RootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-	else
-		if env.Message then env.Message("Teleport", "Player not found", 3) end
-	end
-end
+function ToxPlayer:Init(parentFrame, hub)
+    -- Anti Void Toggle
+    local avBtn = Instance.new("TextButton")
+    avBtn.Size = UDim2.new(1, -10, 0, 32)
+    avBtn.BackgroundColor3 = ToxConfig:Get("Player", "AntiVoid", false) and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(40, 40, 40)
+    avBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    avBtn.Text = "Anti Void: " .. (ToxConfig:Get("Player", "AntiVoid", false) and "ON" or "OFF")
+    avBtn.Font = Enum.Font.SourceSansBold
+    avBtn.TextSize = 14
+    avBtn.Parent = parentFrame
 
--- BOTÕES DA ABA PLAYER
-CreateToggleWithValue("WalkSpeed", PlayerPage, Settings.Speed, Settings.SpeedValue, function(v)
-    Settings.Speed = v
-    if not v and Humanoid then Humanoid.WalkSpeed = 16 end
-end, function(v) Settings.SpeedValue = v end)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = avBtn
 
-CreateToggleWithValue("JumpPower", PlayerPage, Settings.Jump, Settings.JumpValue, function(v)
-    Settings.Jump = v
-    if not v and Humanoid then Humanoid.JumpPower = 50 end
-end, function(v) Settings.JumpValue = v end)
+    avBtn.MouseButton1Click:Connect(function()
+        local state = not ToxConfig:Get("Player", "AntiVoid", false)
+        self:SetAntiVoid(state)
+        avBtn.Text = "Anti Void: " .. (state and "ON" or "OFF")
+        avBtn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(40, 40, 40)
+    end)
 
-CreateToggleWithValue("Fly", PlayerPage, Settings.Fly, Settings.FlySpeed, function(v)
-    Settings.Fly = v
-end, function(v) Settings.FlySpeed = v end)
-
-CreateToggleWithValue("Flycar", PlayerPage, Settings.FlyCar, Settings.FlyCarSpeed, function(v)
-    Settings.FlyCar = v
-    if v then StartFlyCar() else StopFlyCar() end
-end, function(v) Settings.FlyCarSpeed = v end)
-
-CreateToggleWithValue("Float", PlayerPage, Settings.Float, Settings.FloatStrength, function(v)
-    Settings.Float = v
-end, function(v) Settings.FloatStrength = v end)
-
-CreateToggle("Noclip", PlayerPage, Settings.Noclip, function(v)
-    Settings.Noclip = v
-    if v then StartNoclip() else DisableNoclip() end
-end)
-
-CreateToggle("Infinite Jump", PlayerPage, Settings.InfiniteJump, function(v) Settings.InfiniteJump = v end)
-
-CreateTeleportRow("Teleport", PlayerPage, function(nick)
-    TeleportToPlayer(nick)
-end, function(enabled, nick)
-    Settings.LoopTP = enabled
-    if loopTPConn then loopTPConn:Disconnect(); loopTPConn = nil end
-    if enabled then
-        loopTPPlayer = GetPlayerByNick(nick)
-        if loopTPPlayer then
-            loopTPConn = RunService.Heartbeat:Connect(function()
-                if env.Destroyed or not Settings.LoopTP or not loopTPPlayer or not loopTPPlayer.Character then
-                    if loopTPConn then loopTPConn:Disconnect(); loopTPConn = nil end
-                    return
-                end
-                if loopTPPlayer.Character:FindFirstChild("HumanoidRootPart") and RootPart then
-                    RootPart.CFrame = loopTPPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                end
-            end)
-        else
-            if env.Message then env.Message("Loop TP", "Player not found", 3) end
-            Settings.LoopTP = false
-        end
+    -- Aplica o AntiVoid caso ativado via Config
+    if ToxConfig:Get("Player", "AntiVoid", false) then
+        self:SetAntiVoid(true)
     end
-end)
+end
+
+return ToxPlayer
