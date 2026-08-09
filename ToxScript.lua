@@ -1,29 +1,33 @@
--- ========================================================
--- ToxScript.lua - Aba SCRIPTS
--- ========================================================
+-- ToxScript.lua (Módulo Scripts Externos)
+local ToxScript = {}
 
-local env = getgenv().ToxEnv
-if not env then return end
+function ToxScript:Init(parentFrame, hub)
+    local scripts = {
+        { Name = "Infinite Yield", Url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source" },
+        { Name = "Dark Dex Explorer", Url = "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua" },
+        { Name = "SimpleSpy Remote", Url = "https://raw.githubusercontent.com/exunys/SimpleSpy/main/SimpleSpy.lua" }
+    }
 
-local ScriptsPage = env.ScriptsPage
-local CreateButton = env.CreateButton
+    for _, s in ipairs(scripts) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -10, 0, 32)
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Text = "Executar " .. s.Name
+        btn.Font = Enum.Font.SourceSansBold
+        btn.TextSize = 14
+        btn.Parent = parentFrame
 
-CreateButton("Infinite Yield", ScriptsPage, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-end)
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 4)
+        corner.Parent = btn
 
-CreateButton("FE Emotes", ScriptsPage, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/VenezzaX/Useful-things/main/FeEmotes.lua"))()
-end)
+        btn.MouseButton1Click:Connect(function()
+            pcall(function()
+                loadstring(game:HttpGet(s.Url))()
+            end)
+        end)
+    end
+end
 
-CreateButton("Bundle Edit", ScriptsPage, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/BundleEdit.lua"))()
-end)
-
-CreateButton("Wall Walk", ScriptsPage, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/wallwalker.lua"))()
-end)
-
-CreateButton("PShade", ScriptsPage, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua"))()
-end)
+return ToxScript
