@@ -1,22 +1,22 @@
-local Tox = getgenv().Tox
-local Page = Tox.Pages["SCRIPTS"]
+local E = getgenv().ToxEnv
+local ScriptsPage = E.Pages["SCRIPTS"]
 
-Tox.UI.CreateButton("Infinite Yield", Page, function()
+E.CreateButton("Infinite Yield", ScriptsPage, function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 end)
 
-Tox.UI.CreateButton("FE Emotes", Page, function()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/VenezzaX/Usefulthings/refs/heads/main/FeEmotes.lua'))()
+E.CreateButton("FE Emotes", ScriptsPage, function()
+    loadstring(game:HttpGet(('https://raw.githubusercontent.com/VenezzaX/Usefulthings/refs/heads/main/FeEmotes.lua'),true))()
 end)
 
-Tox.UI.CreateButton("Bundle Edit", Page, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/BundleEdit"))()
+E.CreateButton("Bundle Edit", ScriptsPage, function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/BundleEdit?token=GHSAT0AAAAAAEEZIWW5WJZ2VEJNTVX5JP422TW5S7Q"))()
 end)
 
-Tox.UI.CreateButton("Wall Walk", Page, function()
+E.CreateButton("Wall Walk", ScriptsPage, function()
     loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
 end)
 
-Tox.UI.CreateButton("PShade", Page, function()
+E.CreateButton("PShade", ScriptsPage, function()
     loadstring(game:HttpGet('https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua'))()
 end)
