@@ -1,149 +1,160 @@
 -- ToxConfig.lua
 local HttpService = game:GetService("HttpService")
 
-local ToxConfig = {
-    Folder = "ToxHub",
-    File = "ToxHub/AutoSave.json",
-    Settings = {
-        Combat = {
-            Target = "all",
-            FlingSpeed = 10000,
-            AutoFling = false,
-            HitboxSize = 2,
-            HitboxEnabled = false,
-            KillAura = false,
-            KillAuraRange = 15
-        },
-        Player = {
-            AntiVoid = false,
-            WalkSpeed = 16,
-            JumpPower = 50,
-            Fly = false,
-            FlySpeed = 50,
-            Noclip = false,
-            InfiniteJump = false
-        },
-        Visuals = {
-            ESP = false,
-            ESPBoxes = false,
-            ESPNames = false,
-            ESPTracers = false,
-            ESPChams = false,
-            ESPColor = {1, 0, 0} -- RGB normalizado (0 a 1)
-        },
-        Misc = {
-            AntiAFK = true,
-            Fullbright = false,
-            FPSBooster = false
-        }
-    }
+local ToxConfig = {}
+ToxConfig.FolderName = "ToxV1_Data"
+ToxConfig.ConfigFilePath = ToxConfig.FolderName .. "/config.json"
+
+ToxConfig.ColorMap = {
+	["White"] = Color3.fromRGB(255, 255, 255),
+	["Red"] = Color3.fromRGB(255, 50, 50),
+	["Green"] = Color3.fromRGB(50, 255, 50),
+	["Blue"] = Color3.fromRGB(50, 150, 255),
+	["Yellow"] = Color3.fromRGB(255, 255, 50),
+	["Cyan"] = Color3.fromRGB(50, 255, 255),
+	["Magenta"] = Color3.fromRGB(255, 50, 255),
+	["Orange"] = Color3.fromRGB(255, 150, 50),
+	["Purple"] = Color3.fromRGB(150, 50, 255)
 }
 
-function ToxConfig:Init()
-    if isfolder and not isfolder(self.Folder) then
-        makefolder(self.Folder)
-    end
-    self:Load()
-end
+ToxConfig.Settings = {
+	Noclip = false,
+	InfiniteJump = false,
+	Speed = false,
+	Jump = false,
+	Fly = false,
+	FlyCar = false,
+	NoFallDamage = false,
+	AntiVoid = false,
+	AntiFling = true,
+	CtrlClickTP = false,
+	Float = false,
+	NormalizeAnims = false,
+	Emulation = false,
+	AntiAFK = true,
+	ChatLogs = false,
+	Render3D = true,
+    Freecam = false,
+    Fullbright = false,
+    FOVEnabled = false,
+    FOVValue = 70,
+    Spectating = false,
+    LoopTP = false,
+	SpeedValue = 16,
+	JumpValue = 50,
+	FlySpeed = 5,
+	FlyCarSpeed = 5,
+	FloatStrength = 7,
+	UpBind = Enum.KeyCode.E,
+	DownBind = Enum.KeyCode.Q,
+	ESP = false,
+	EspColorName = "White",
+	EspColor = Color3.fromRGB(255, 255, 255),
+	EspSize = 13,
+	UseLegacy = false,
+	ShowHealth = false,
+	NameType = "Display",
+	Chams = false,
+	UseHighlights = false,
+	OutlineColor = Color3.fromRGB(255, 255, 255),
+	OutlineOpacity = 0.5,
+	ChamOpacity = 0.75,
+	Tracers = false,
+	DisableTeam = false,
+	ShowTeamColor = false,
+	GUIKeybind = Enum.KeyCode.LeftAlt,
+    MusicAutoPlay = false,
+    MusicLoop = false
+}
 
-function ToxConfig:Save()
-    if writefile then
-        pcall(function()
-            local json = HttpService:JSONEncode(self.Settings)
-            writefile(self.File, json)
-        end)
-    end
-end
+ToxConfig.SavedIDs = {}
 
-function ToxConfig:Load()
-    if isfile and isfile(self.File) then
+function ToxConfig:EnsureFolder()
+    if makefolder and isfolder then
         pcall(function()
-            local content = readfile(self.File)
-            local decoded = HttpService:JSONDecode(content)
-            if type(decoded) == "table" then
-                for cat, tbl in pairs(decoded) do
-                    if self.Settings[cat] then
-                        for k, v in pairs(tbl) do
-                            self.Settings[cat][k] = v
-                        end
-                    else
-                        self.Settings[cat] = tbl
-                    end
-                end
+            if not isfolder(self.FolderName) then
+                makefolder(self.FolderName)
             end
         end)
     end
 end
 
-function ToxConfig:Set(category, key, value)
-    if not self.Settings[category] then
-        self.Settings[category] = {}
-    end
-    self.Settings[category][key] = value
-    self:Save() -- AutoSave instantâneo ao alternar/modificar opções
-end
+function ToxConfig:Save()
+    self:EnsureFolder()
+    if not writefile then return end
 
-function ToxConfig:Get(category, key, defaultValue)
-    if self.Settings[category] and self.Settings[category][key] ~= nil then
-        return self.Settings[category][key]
-    end
-    return defaultValue
-end
+    local data = {
+        Settings = {
+            Speed = self.Settings.Speed,
+            SpeedValue = self.Settings.SpeedValue,
+            Jump = self.Settings.Jump,
+            JumpValue = self.Settings.JumpValue,
+            Fly = self.Settings.Fly,
+            FlySpeed = self.Settings.FlySpeed,
+            FlyCar = self.Settings.FlyCar,
+            FlyCarSpeed = self.Settings.FlyCarSpeed,
+            Float = self.Settings.Float,
+            FloatStrength = self.Settings.FloatStrength,
+            Noclip = self.Settings.Noclip,
+            InfiniteJump = self.Settings.InfiniteJump,
+            CtrlClickTP = self.Settings.CtrlClickTP,
+            NoFallDamage = self.Settings.NoFallDamage,
+            AntiVoid = self.Settings.AntiVoid,
+            AntiFling = self.Settings.AntiFling,
+            AntiAFK = self.Settings.AntiAFK,
+            ChatLogs = self.Settings.ChatLogs,
+            Render3D = self.Settings.Render3D,
+            ESP = self.Settings.ESP,
+            EspSize = self.Settings.EspSize,
+            EspColorName = self.Settings.EspColorName,
+            ShowHealth = self.Settings.ShowHealth,
+            NameType = self.Settings.NameType,
+            Chams = self.Settings.Chams,
+            ShowTeamColor = self.Settings.ShowTeamColor,
+            DisableTeam = self.Settings.DisableTeam,
+            Freecam = self.Settings.Freecam,
+            Fullbright = self.Settings.Fullbright,
+            FOVEnabled = self.Settings.FOVEnabled,
+            FOVValue = self.Settings.FOVValue,
+            GUIKeybind = self.Settings.GUIKeybind and self.Settings.GUIKeybind.Name or "LeftAlt",
+            MusicAutoPlay = self.Settings.MusicAutoPlay,
+            MusicLoop = self.Settings.MusicLoop
+        },
+        SavedIDs = self.SavedIDs
+    }
 
-function ToxConfig:InitUI(parentFrame, hub)
-    local layout = parentFrame:FindFirstChildOfClass("UIListLayout") or Instance.new("UIListLayout", parentFrame)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 6)
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -10, 0, 25)
-    title.BackgroundTransparency = 1
-    title.Text = "SISTEMA DE CONFIGURAÇÕES & AUTOSAVE"
-    title.TextColor3 = Color3.fromRGB(0, 200, 255)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 15
-    title.Parent = parentFrame
-
-    local saveBtn = Instance.new("TextButton")
-    saveBtn.Size = UDim2.new(1, -10, 0, 32)
-    saveBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-    saveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    saveBtn.Text = "Salvar Configurações Manualmente"
-    saveBtn.Font = Enum.Font.SourceSansBold
-    saveBtn.TextSize = 14
-    saveBtn.Parent = parentFrame
-
-    local sCorner = Instance.new("UICorner")
-    sCorner.CornerRadius = UDim.new(0, 4)
-    sCorner.Parent = saveBtn
-
-    saveBtn.MouseButton1Click:Connect(function()
-        self:Save()
-        saveBtn.Text = "Configurações Salvas com Sucesso!"
-        task.wait(1.5)
-        saveBtn.Text = "Salvar Configurações Manualmente"
+    pcall(function()
+        local json = HttpService:JSONEncode(data)
+        writefile(self.ConfigFilePath, json)
     end)
+end
 
-    local resetBtn = Instance.new("TextButton")
-    resetBtn.Size = UDim2.new(1, -10, 0, 32)
-    resetBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-    resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    resetBtn.Text = "Resetar Configurações Padrão"
-    resetBtn.Font = Enum.Font.SourceSansBold
-    resetBtn.TextSize = 14
-    resetBtn.Parent = parentFrame
+function ToxConfig:Load()
+    if not isfile or not readfile or not isfile(self.ConfigFilePath) then return end
 
-    local rCorner = Instance.new("UICorner")
-    rCorner.CornerRadius = UDim.new(0, 4)
-    rCorner.Parent = resetBtn
+    pcall(function()
+        local content = readfile(self.ConfigFilePath)
+        local data = HttpService:JSONDecode(content)
 
-    resetBtn.MouseButton1Click:Connect(function()
-        if isfile and isfile(self.File) then
-            delfile(self.File)
+        if data then
+            if data.Settings then
+                for k, v in pairs(data.Settings) do
+                    if k == "GUIKeybind" then
+                        pcall(function() self.Settings.GUIKeybind = Enum.KeyCode[v] end)
+                    elseif k == "EspColorName" then
+                        self.Settings.EspColorName = v
+                        self.Settings.EspColor = self.ColorMap[v] or Color3.fromRGB(255, 255, 255)
+                    else
+                        self.Settings[k] = v
+                    end
+                end
+            end
+            if data.SavedIDs then
+                self.SavedIDs = data.SavedIDs
+            end
         end
-        resetBtn.Text = "Configurações Resetadas! Recarregue a GUI."
     end)
 end
 
-ToxConfig:Init()
+ToxConfig:Load()
 return ToxConfig
