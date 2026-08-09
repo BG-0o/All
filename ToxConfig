@@ -1,0 +1,22 @@
+local Tox = getgenv().Tox
+local Page = Tox.Pages["CONFIG"]
+local Settings = Tox.Settings
+local Services = Tox.Services
+
+Tox.UI.CreateToggle("Anti AFK", Page, Settings.AntiAFK, function(v)
+    Settings.AntiAFK = v
+end)
+
+Tox.UI.CreateButton("Rejoin", Page, function()
+    if #Services.Players:GetPlayers() <= 1 then
+        Services.TeleportService:Teleport(game.PlaceId, Tox.Player)
+    else
+        Services.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Tox.Player)
+    end
+end)
+
+Tox.UI.CreateButton("DESTRUIR GUI", Page, function()
+    Tox.Destroyed = true
+    if Tox.Gui then Tox.Gui:Destroy() end
+    if Tox.NotifGui then Tox.NotifGui:Destroy() end
+end)
