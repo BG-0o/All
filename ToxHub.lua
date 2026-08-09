@@ -46,8 +46,6 @@ local Settings = {
 	AntiFling = true,
 	CtrlClickTP = false,
 	Float = false,
-	NormalizeAnims = false,
-	Emulation = false,
 	AntiAFK = true,
 	ChatLogs = false,
 	Render3D = true,
@@ -68,15 +66,12 @@ local Settings = {
 	EspColorName = "White",
 	EspColor = Color3.fromRGB(255, 255, 255),
 	EspSize = 13,
-	UseLegacy = false,
 	ShowHealth = false,
 	NameType = "Display",
 	Chams = false,
-	UseHighlights = false,
+	ChamOpacity = 0.75,
 	OutlineColor = Color3.fromRGB(255, 255, 255),
 	OutlineOpacity = 0.5,
-	ChamOpacity = 0.75,
-	Tracers = false,
 	DisableTeam = false,
 	ShowTeamColor = false,
 	GUIKeybind = Enum.KeyCode.LeftAlt,
@@ -118,42 +113,7 @@ local function AutoSaveConfiguration()
     if not writefile then return end
 
     local data = {
-        Settings = {
-            Speed = Settings.Speed,
-            SpeedValue = Settings.SpeedValue,
-            Jump = Settings.Jump,
-            JumpValue = Settings.JumpValue,
-            Fly = Settings.Fly,
-            FlySpeed = Settings.FlySpeed,
-            FlyCar = Settings.FlyCar,
-            FlyCarSpeed = Settings.FlyCarSpeed,
-            Float = Settings.Float,
-            FloatStrength = Settings.FloatStrength,
-            Noclip = Settings.Noclip,
-            InfiniteJump = Settings.InfiniteJump,
-            CtrlClickTP = Settings.CtrlClickTP,
-            NoFallDamage = Settings.NoFallDamage,
-            AntiVoid = Settings.AntiVoid,
-            AntiFling = Settings.AntiFling,
-            AntiAFK = Settings.AntiAFK,
-            ChatLogs = Settings.ChatLogs,
-            Render3D = Settings.Render3D,
-            ESP = Settings.ESP,
-            EspSize = Settings.EspSize,
-            EspColorName = Settings.EspColorName,
-            ShowHealth = Settings.ShowHealth,
-            NameType = Settings.NameType,
-            Chams = Settings.Chams,
-            ShowTeamColor = Settings.ShowTeamColor,
-            DisableTeam = Settings.DisableTeam,
-            Freecam = Settings.Freecam,
-            Fullbright = Settings.Fullbright,
-            FOVEnabled = Settings.FOVEnabled,
-            FOVValue = Settings.FOVValue,
-            GUIKeybind = Settings.GUIKeybind and Settings.GUIKeybind.Name or "LeftAlt",
-            MusicAutoPlay = Settings.MusicAutoPlay,
-            MusicLoop = Settings.MusicLoop
-        },
+        Settings = Settings,
         SavedIDs = SavedIDs
     }
 
@@ -184,7 +144,6 @@ local function LoadConfiguration()
             end
             if data.SavedIDs then
                 SavedIDs = data.SavedIDs
-                if RenderSavedIDs then RenderSavedIDs() end
             end
         end
     end)
@@ -192,7 +151,29 @@ end
 
 LoadConfiguration()
 
--- SISTEMA DE NOTIFICAÇÕES
+-- FUNÇÃO UTILITÁRIA PARA ARRASTAR JANELAS (DRAG)
+local function MakeDraggable(topBar, frame)
+	local dragging, dragInput, dragStart, startPos
+	topBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true; dragStart = input.Position; startPos = frame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
+			end)
+		end
+	end)
+	topBar.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local Delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
+		end
+	end)
+end
+
+-- NOTIFICAÇÕES
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "ToxNotifs"
 NotifGui.DisplayOrder = 999
@@ -297,22 +278,7 @@ TopBar.BackgroundColor3 = MAIN_COLOR
 TopBar.BorderSizePixel = 0
 TopBar.Parent = Main
 
-local Dragging, DragInput, DragStart, StartPos
-TopBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		Dragging = true; DragStart = input.Position; StartPos = Main.Position
-		input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then Dragging = false end end)
-	end
-end)
-TopBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then DragInput = input end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if input == DragInput and Dragging then
-		local Delta = input.Position - DragStart
-		Main.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
-	end
-end)
+MakeDraggable(TopBar, Main)
 
 local LogoImage = Instance.new("ImageLabel")
 LogoImage.Size = UDim2.new(0, 18, 0, 18)
@@ -349,8 +315,7 @@ Tabs.Size = UDim2.new(1, -10, 0, 34)
 Tabs.Position = UDim2.new(0, 5, 0, 44)
 Tabs.BackgroundTransparency = 1
 Tabs.BorderSizePixel = 0
-Tabs.ScrollBarThickness = 2
-Tabs.ScrollBarImageColor3 = MAIN_COLOR
+Tabs.ScrollBarThickness = 0
 Tabs.ScrollingDirection = Enum.ScrollingDirection.X
 Tabs.CanvasSize = UDim2.new(0, 0, 0, 0)
 Tabs.Parent = Main
@@ -447,7 +412,7 @@ CombatPage.Visible = true
 CombatTab.BackgroundColor3 = MAIN_COLOR
 CombatTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- CHAT LOGS GUI
+-- CHAT LOGS GUI (MOVEL & COMPLETO)
 local ChatLogGui = Instance.new("Frame")
 ChatLogGui.Name = "ChatLogFrame"
 ChatLogGui.Size = UDim2.new(0, 350, 0, 230)
@@ -466,6 +431,8 @@ ChatLogTopBar.Size = UDim2.new(1, 0, 0, 32)
 ChatLogTopBar.BackgroundColor3 = MAIN_COLOR
 ChatLogTopBar.BorderSizePixel = 0
 ChatLogTopBar.Parent = ChatLogGui
+
+MakeDraggable(ChatLogTopBar, ChatLogGui)
 
 local ChatLogTitle = Instance.new("TextLabel")
 ChatLogTitle.Size = UDim2.new(1, -110, 1, 0)
@@ -488,7 +455,6 @@ ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ClearBtn.Font = Enum.Font.GothamBold
 ClearBtn.TextSize = 11
 ClearBtn.Parent = ChatLogTopBar
-
 local ClearCorner = Instance.new("UICorner") ClearCorner.CornerRadius = UDim.new(0, 4) ClearCorner.Parent = ClearBtn
 
 local ChatLogScroll = Instance.new("ScrollingFrame")
@@ -541,7 +507,7 @@ local function AddChatLog(p, msg)
     Label.Parent = ChatLogScroll
 end
 
--- MUSIC PLAYER GUI
+-- MUSIC PLAYER GUI (MOVEL & COMPLETO)
 local MusicGui = Instance.new("Frame")
 MusicGui.Name = "MusicPlayerFrame"
 MusicGui.Size = UDim2.new(0, 330, 0, 350)
@@ -560,6 +526,8 @@ MusicTopBar.Size = UDim2.new(1, 0, 0, 32)
 MusicTopBar.BackgroundColor3 = MAIN_COLOR
 MusicTopBar.BorderSizePixel = 0
 MusicTopBar.Parent = MusicGui
+
+MakeDraggable(MusicTopBar, MusicGui)
 
 local MusicTitle = Instance.new("TextLabel")
 MusicTitle.Size = UDim2.new(1, -40, 1, 0)
@@ -636,6 +604,88 @@ PlayPauseBtn.TextSize = 11
 PlayPauseBtn.Parent = MusicContent
 local PlayPauseCorner = Instance.new("UICorner") PlayPauseCorner.CornerRadius = UDim.new(0, 4) PlayPauseCorner.Parent = PlayPauseBtn
 
+local VolLabel = Instance.new("TextLabel")
+VolLabel.Size = UDim2.new(0, 30, 0, 24)
+VolLabel.Position = UDim2.new(0, 0, 0, 32)
+VolLabel.BackgroundTransparency = 1
+VolLabel.Text = "Vol:"
+VolLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+VolLabel.Font = Enum.Font.GothamMedium
+VolLabel.TextSize = 11
+VolLabel.TextXAlignment = Enum.TextXAlignment.Left
+VolLabel.Parent = MusicContent
+
+local VolInput = Instance.new("TextBox")
+VolInput.Size = UDim2.new(0, 35, 0, 24)
+VolInput.Position = UDim2.new(0, 28, 0, 32)
+VolInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+VolInput.Text = "1"
+VolInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+VolInput.Font = Enum.Font.Gotham
+VolInput.TextSize = 11
+VolInput.Parent = MusicContent
+local VolInputCorner = Instance.new("UICorner") VolInputCorner.CornerRadius = UDim.new(0, 4) VolInputCorner.Parent = VolInput
+
+VolInput.FocusLost:Connect(function()
+    local vol = tonumber(VolInput.Text)
+    if vol then CustomSound.Volume = math.clamp(vol, 0, 10) else VolInput.Text = tostring(CustomSound.Volume) end
+end)
+
+local AutoPlayBtn = Instance.new("TextButton")
+AutoPlayBtn.Size = UDim2.new(0, 62, 0, 24)
+AutoPlayBtn.Position = UDim2.new(0, 68, 0, 32)
+AutoPlayBtn.BackgroundColor3 = Settings.MusicAutoPlay and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+AutoPlayBtn.Text = "Auto Play"
+AutoPlayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoPlayBtn.Font = Enum.Font.GothamBold
+AutoPlayBtn.TextSize = 10
+AutoPlayBtn.Parent = MusicContent
+local AutoPlayCorner = Instance.new("UICorner") AutoPlayCorner.CornerRadius = UDim.new(0, 4) AutoPlayCorner.Parent = AutoPlayBtn
+
+local LoopBtn = Instance.new("TextButton")
+LoopBtn.Size = UDim2.new(0, 42, 0, 24)
+LoopBtn.Position = UDim2.new(0, 134, 0, 32)
+LoopBtn.BackgroundColor3 = Settings.MusicLoop and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+LoopBtn.Text = "Loop"
+LoopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoopBtn.Font = Enum.Font.GothamBold
+LoopBtn.TextSize = 10
+LoopBtn.Parent = MusicContent
+local LoopCorner = Instance.new("UICorner") LoopCorner.CornerRadius = UDim.new(0, 4) LoopCorner.Parent = LoopBtn
+
+local PrevBtn = Instance.new("TextButton")
+PrevBtn.Size = UDim2.new(0, 32, 0, 24)
+PrevBtn.Position = UDim2.new(0, 180, 0, 32)
+PrevBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+PrevBtn.Text = "<<"
+PrevBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PrevBtn.Font = Enum.Font.GothamBold
+PrevBtn.TextSize = 10
+PrevBtn.Parent = MusicContent
+local PrevCorner = Instance.new("UICorner") PrevCorner.CornerRadius = UDim.new(0, 4) PrevCorner.Parent = PrevBtn
+
+local NextBtn = Instance.new("TextButton")
+NextBtn.Size = UDim2.new(0, 32, 0, 24)
+NextBtn.Position = UDim2.new(0, 216, 0, 32)
+NextBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+NextBtn.Text = ">>"
+NextBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NextBtn.Font = Enum.Font.GothamBold
+NextBtn.TextSize = 10
+NextBtn.Parent = MusicContent
+local NextCorner = Instance.new("UICorner") NextCorner.CornerRadius = UDim.new(0, 4) NextCorner.Parent = NextBtn
+
+local SaveIDBtn = Instance.new("TextButton")
+SaveIDBtn.Size = UDim2.new(0, 60, 0, 24)
+SaveIDBtn.Position = UDim2.new(1, -60, 0, 32)
+SaveIDBtn.BackgroundColor3 = Color3.fromRGB(30, 80, 40)
+SaveIDBtn.Text = "Save"
+SaveIDBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveIDBtn.Font = Enum.Font.GothamBold
+SaveIDBtn.TextSize = 10
+SaveIDBtn.Parent = MusicContent
+local SaveIDCorner = Instance.new("UICorner") SaveIDCorner.CornerRadius = UDim.new(0, 4) SaveIDCorner.Parent = SaveIDBtn
+
 local SavedScroll = Instance.new("ScrollingFrame")
 SavedScroll.Size = UDim2.new(1, 0, 1, -64)
 SavedScroll.Position = UDim2.new(0, 0, 0, 62)
@@ -649,6 +699,174 @@ local SavedLayout = Instance.new("UIListLayout")
 SavedLayout.Padding = UDim.new(0, 4)
 SavedLayout.SortOrder = Enum.SortOrder.LayoutOrder
 SavedLayout.Parent = SavedScroll
+
+SavedLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    SavedScroll.CanvasSize = UDim2.new(0, 0, 0, SavedLayout.AbsoluteContentSize.Y + 10)
+end)
+
+local function CopyToClipboard(txt)
+    local clip = setclipboard or toclipboard or (syn and syn.write_clipboard)
+    if clip then clip(tostring(txt)); CustomNotify("ID Copied!", Color3.fromRGB(100, 255, 100))
+    else CustomNotify("Clipboard not supported!", Color3.fromRGB(255, 100, 100)) end
+end
+
+local function PlayTrackAtIndex(index)
+    if #SavedIDs == 0 then return end
+    if index > #SavedIDs then index = 1 end
+    if index < 1 then index = #SavedIDs end
+    CurrentTrackIndex = index
+    local track = SavedIDs[index]
+    if track then
+        CustomSound.SoundId = "rbxassetid://" .. track.id
+        CustomSound:Play()
+        PlayPauseBtn.Text = "Pause"
+        IDInput.Text = track.id
+        NameInput.Text = track.name or ""
+    end
+end
+
+CustomSound.Ended:Connect(function()
+    if Settings.MusicLoop then CustomSound:Play()
+    elseif Settings.MusicAutoPlay and #SavedIDs > 0 then PlayTrackAtIndex(CurrentTrackIndex + 1)
+    else PlayPauseBtn.Text = "Play" end
+end)
+
+AutoPlayBtn.MouseButton1Click:Connect(function()
+    Settings.MusicAutoPlay = not Settings.MusicAutoPlay
+    AutoPlayBtn.BackgroundColor3 = Settings.MusicAutoPlay and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+    AutoSaveConfiguration()
+end)
+
+LoopBtn.MouseButton1Click:Connect(function()
+    Settings.MusicLoop = not Settings.MusicLoop
+    LoopBtn.BackgroundColor3 = Settings.MusicLoop and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+    AutoSaveConfiguration()
+end)
+
+PrevBtn.MouseButton1Click:Connect(function() PlayTrackAtIndex(CurrentTrackIndex - 1) end)
+NextBtn.MouseButton1Click:Connect(function() PlayTrackAtIndex(CurrentTrackIndex + 1) end)
+
+RenderSavedIDs = function()
+    for _, child in ipairs(SavedScroll:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+    for idx, item in ipairs(SavedIDs) do
+        local idStr = typeof(item) == "table" and item.id or tostring(item)
+        local nameStr = typeof(item) == "table" and (item.name and item.name ~= "" and item.name or ("Track " .. idx)) or ("Track " .. idx)
+
+        local ItemFrame = Instance.new("Frame")
+        ItemFrame.Size = UDim2.new(1, -4, 0, 30)
+        ItemFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+        ItemFrame.Parent = SavedScroll
+        local ItemCorner = Instance.new("UICorner") ItemCorner.CornerRadius = UDim.new(0, 4) ItemCorner.Parent = ItemFrame
+
+        local IDLabel = Instance.new("TextLabel")
+        IDLabel.Size = UDim2.new(1, -155, 1, 0)
+        IDLabel.Position = UDim2.new(0, 8, 0, 0)
+        IDLabel.BackgroundTransparency = 1
+        IDLabel.Text = nameStr .. " (" .. idStr .. ")"
+        IDLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
+        IDLabel.Font = Enum.Font.GothamMedium
+        IDLabel.TextSize = 11
+        IDLabel.TextXAlignment = Enum.TextXAlignment.Left
+        IDLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        IDLabel.Parent = ItemFrame
+
+        local PlayBtn = Instance.new("TextButton")
+        PlayBtn.Size = UDim2.new(0, 34, 0, 22)
+        PlayBtn.Position = UDim2.new(1, -145, 0.5, -11)
+        PlayBtn.BackgroundColor3 = MAIN_COLOR
+        PlayBtn.Text = "Play"
+        PlayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        PlayBtn.Font = Enum.Font.GothamBold
+        PlayBtn.TextSize = 10
+        PlayBtn.Parent = ItemFrame
+        local PlayCorner = Instance.new("UICorner") PlayCorner.CornerRadius = UDim.new(0, 3) PlayCorner.Parent = PlayBtn
+
+        local EditBtn = Instance.new("TextButton")
+        EditBtn.Size = UDim2.new(0, 34, 0, 22)
+        EditBtn.Position = UDim2.new(1, -107, 0.5, -11)
+        EditBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+        EditBtn.Text = "Edit"
+        EditBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        EditBtn.Font = Enum.Font.GothamBold
+        EditBtn.TextSize = 10
+        EditBtn.Parent = ItemFrame
+        local EditCorner = Instance.new("UICorner") EditCorner.CornerRadius = UDim.new(0, 3) EditCorner.Parent = EditBtn
+
+        local CopyBtn = Instance.new("TextButton")
+        CopyBtn.Size = UDim2.new(0, 34, 0, 22)
+        CopyBtn.Position = UDim2.new(1, -69, 0.5, -11)
+        CopyBtn.BackgroundColor3 = Color3.fromRGB(40, 50, 90)
+        CopyBtn.Text = "Copy"
+        CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        CopyBtn.Font = Enum.Font.GothamBold
+        CopyBtn.TextSize = 10
+        CopyBtn.Parent = ItemFrame
+        local CopyCorner = Instance.new("UICorner") CopyCorner.CornerRadius = UDim.new(0, 3) CopyCorner.Parent = CopyBtn
+
+        local DelBtn = Instance.new("TextButton")
+        DelBtn.Size = UDim2.new(0, 28, 0, 22)
+        DelBtn.Position = UDim2.new(1, -31, 0.5, -11)
+        DelBtn.BackgroundColor3 = Color3.fromRGB(160, 40, 40)
+        DelBtn.Text = "X"
+        DelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        DelBtn.Font = Enum.Font.GothamBold
+        DelBtn.TextSize = 10
+        DelBtn.Parent = ItemFrame
+        local DelCorner = Instance.new("UICorner") DelCorner.CornerRadius = UDim.new(0, 3) DelCorner.Parent = DelBtn
+
+        PlayBtn.MouseButton1Click:Connect(function() PlayTrackAtIndex(idx) end)
+        EditBtn.MouseButton1Click:Connect(function()
+            IDInput.Text = idStr
+            NameInput.Text = nameStr
+            CustomNotify("Edit ID/Name and click Save!", Color3.fromRGB(255, 255, 100))
+        end)
+        CopyBtn.MouseButton1Click:Connect(function() CopyToClipboard(idStr) end)
+        DelBtn.MouseButton1Click:Connect(function()
+            table.remove(SavedIDs, idx)
+            RenderSavedIDs()
+            AutoSaveConfiguration()
+        end)
+    end
+end
+
+PlayPauseBtn.MouseButton1Click:Connect(function()
+    if CustomSound.IsPlaying then
+        CustomSound:Pause()
+        PlayPauseBtn.Text = "Play"
+    else
+        local rawID = string.match(IDInput.Text, "%d+")
+        if rawID then
+            if CustomSound.SoundId ~= "rbxassetid://" .. rawID then CustomSound.SoundId = "rbxassetid://" .. rawID end
+            CustomSound:Play()
+            PlayPauseBtn.Text = "Pause"
+        else CustomNotify("Invalid Sound ID!", Color3.fromRGB(255, 100, 100)) end
+    end
+end)
+
+SaveIDBtn.MouseButton1Click:Connect(function()
+    local rawID = string.match(IDInput.Text, "%d+")
+    if rawID then
+        local trackName = NameInput.Text
+        if trackName == "" then trackName = "Track " .. (#SavedIDs + 1) end
+        local existingIndex = nil
+        for i, item in ipairs(SavedIDs) do
+            if (typeof(item) == "table" and item.id == rawID) or item == rawID then existingIndex = i break end
+        end
+        if existingIndex then
+            SavedIDs[existingIndex] = {id = rawID, name = trackName}
+            CustomNotify("Track updated!", Color3.fromRGB(100, 255, 100))
+        else
+            table.insert(SavedIDs, {id = rawID, name = trackName})
+            CustomNotify("Music ID Saved!", Color3.fromRGB(100, 255, 100))
+        end
+        RenderSavedIDs()
+        AutoSaveConfiguration()
+    else CustomNotify("Invalid Sound ID!", Color3.fromRGB(255, 100, 100)) end
+end)
+
+RenderSavedIDs()
 
 -- GERADORES DA INTERFACE (CONSTRUTORES)
 local function CreateToggle(Name, Page, DefaultValue, Callback)
@@ -1129,6 +1347,34 @@ local function CreateButton(Name, Page, Callback)
 	return Button
 end
 
+-- UNLOAD TOTAL DO SCRIPT
+local function UnloadScript()
+    Destroyed = true
+    if getgenv().ToxEnv then getgenv().ToxEnv.Destroyed = true end
+
+    pcall(function() Gui:Destroy() end)
+    pcall(function() NotifGui:Destroy() end)
+    pcall(function() if CustomSound then CustomSound:Stop(); CustomSound:Destroy() end end)
+
+    Lighting.Ambient = OriginalLighting.Ambient
+    Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+    Lighting.Brightness = OriginalLighting.Brightness
+    Lighting.ClockTime = OriginalLighting.ClockTime
+    Lighting.FogEnd = OriginalLighting.FogEnd
+    Lighting.FogStart = OriginalLighting.FogStart
+    Lighting.GlobalShadows = OriginalLighting.GlobalShadows
+
+    if Player.Character then
+        local hum = Player.Character:FindFirstChildOfClass("Humanoid")
+        local root = Player.Character:FindFirstChild("HumanoidRootPart")
+        if hum then hum.WalkSpeed = 16; hum.JumpPower = 50; hum.PlatformStand = false end
+        if root then root.Anchored = false end
+        for _, part in ipairs(Player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end
+end
+
 -- AMBIENTE COMPARTILHADO (ToxEnv)
 getgenv().ToxEnv = {
     Settings = Settings,
@@ -1152,6 +1398,8 @@ getgenv().ToxEnv = {
     CustomNotify = CustomNotify,
     Message = Message,
     AutoSaveConfiguration = AutoSaveConfiguration,
+    UnloadScript = UnloadScript,
+    AddChatLog = AddChatLog,
     
     MusicGui = MusicGui,
     ChatLogGui = ChatLogGui,
@@ -1272,7 +1520,7 @@ local function ShowCenterLoadSequence()
 
             IsLoaded = true
 
-            -- CARREGAMENTO DOS MÓDULOS SEPARADOS NO GITHUB
+            -- CARREGAMENTO DOS MÓDULOS
             local baseUrl = "https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/"
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxCombat.lua"))() end)
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxPlayer.lua"))() end)
@@ -1280,6 +1528,8 @@ local function ShowCenterLoadSequence()
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxMisc.lua"))() end)
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxScript.lua"))() end)
             pcall(function() loadstring(game:HttpGet(baseUrl .. "ToxConfig.lua"))() end)
+
+            if Settings.ChatLogs then ChatLogGui.Visible = true end
         end
     end)
 end
