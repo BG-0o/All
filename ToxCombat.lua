@@ -1,4 +1,4 @@
--- ToxCombat.lua (Módulo Combate com Fling para ALL, Random e Nicks)
+-- ToxCombat.lua
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -9,7 +9,7 @@ local ToxCombat = {
     IsFlinging = false
 }
 
--- FIX: Reconhecimento Universal de Alvos (ALL, RANDOM, OTHERS, USERNAME, DISPLAYNAME)
+-- FIX: Sistema Universal de Busca de Alvos
 function ToxCombat:GetTargets(str)
     if not str or str == "" then return {} end
     str = string.lower(str):match("^%s*(.-)%s*$")
@@ -27,6 +27,8 @@ function ToxCombat:GetTargets(str)
         if #plrs > 0 then
             table.insert(targets, plrs[math.random(1, #plrs)])
         end
+    elseif str == "me" then
+        table.insert(targets, LocalPlayer)
     else
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer then
@@ -41,7 +43,7 @@ function ToxCombat:GetTargets(str)
     return targets
 end
 
--- FIX: Fling Físico com Suporte a Lista de Alvos
+-- FIX: Execução de Fling
 function ToxCombat:Fling(targetString)
     local targets = self:GetTargets(targetString)
     if #targets == 0 then return end
