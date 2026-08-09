@@ -40,6 +40,7 @@ local Settings = {
 	NoFallDamage = false,
 	AntiVoid = false,
 	AntiFling = true,
+	WalkFling = false,
 	CtrlClickTP = false,
 	Float = false,
 	NormalizeAnims = false,
@@ -139,6 +140,7 @@ local function AutoSaveConfiguration()
             NoFallDamage = Settings.NoFallDamage,
             AntiVoid = Settings.AntiVoid,
             AntiFling = Settings.AntiFling,
+            WalkFling = Settings.WalkFling,
             AntiAFK = Settings.AntiAFK,
             ChatLogs = Settings.ChatLogs,
             Render3D = Settings.Render3D,
@@ -391,7 +393,7 @@ Tabs.Size = UDim2.new(1, -10, 0, 34)
 Tabs.Position = UDim2.new(0, 5, 0, 44)
 Tabs.BackgroundTransparency = 1
 Tabs.BorderSizePixel = 0
-Tabs.ScrollBarThickness = 0 -- Oculta a barra para remover a linha azul
+Tabs.ScrollBarThickness = 0
 Tabs.ScrollingDirection = Enum.ScrollingDirection.X
 Tabs.CanvasSize = UDim2.new(0, 0, 0, 0)
 Tabs.Parent = Main
@@ -1007,7 +1009,7 @@ end)
 
 RenderSavedIDs()
 
--- UI CREATORS (COM UICORNER NOS CONTAINERS)
+-- UI CREATORS
 local function CreateToggle(Name, Page, DefaultValue, Callback)
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(1, -5, 0, 39)
@@ -1766,6 +1768,28 @@ local function ExecuteFling(TargetInput)
 	end
 end
 
+-- WALK FLING SYSTEM
+local WalkFlingConnection
+local function StopWalkFling()
+	if WalkFlingConnection then
+		WalkFlingConnection:Disconnect()
+		WalkFlingConnection = nil
+	end
+end
+
+local function StartWalkFling()
+	StopWalkFling()
+	WalkFlingConnection = RunService.Heartbeat:Connect(function()
+		if Destroyed or not Settings.WalkFling or not Character or not RootPart or not Humanoid or Humanoid.Health <= 0 then
+			StopWalkFling()
+			return
+		end
+		local vel = RootPart.AssemblyLinearVelocity
+		RootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 15, vel.Z)
+		RootPart.AssemblyAngularVelocity = Vector3.new(0, 999999, 0)
+	end)
+end
+
 -- LOGIC & OTHER SYSTEMS
 local NoFallConnection
 local function StopNoFall()
@@ -1930,6 +1954,7 @@ local function StartNoclip()
 		end
 	end)
 end
+
 local function DisableNoclip()
 	if NoclipConnection then NoclipConnection:Disconnect() NoclipConnection = nil end
 	if Character then
@@ -2204,7 +2229,7 @@ UserInputService.InputBegan:Connect(function(Input, GameProcessed)
     end
 end)
 
--- ESP SYSTEM
+-- ESP & CHAMS INDEPENDENTE SYSTEM
 local ESPFolder = Instance.new("Folder")
 ESPFolder.Name = "V4_ESP_Folder"
 pcall(function() ESPFolder.Parent = (gethui and gethui()) or game:GetService("CoreGui") end)
@@ -2233,32 +2258,40 @@ local function UpdatePlayerESP(targetPlayer)
 
 	local color = (Settings.ShowTeamColor and targetPlayer.TeamColor) and targetPlayer.TeamColor.Color or Settings.EspColor
 	local displayName = (Settings.NameType == "Display") and targetPlayer.DisplayName or targetPlayer.Name
-	local cache = ESPStorage[targetPlayer]
+	local cache = ESPStorage[targetPlayer] or {}
 
-	if not cache or not cache.Billboard or not cache.Billboard.Parent then
-		RemoveESP(targetPlayer)
-		local BB = Instance.new("BillboardGui")
-		BB.Name = targetPlayer.Name .. "_ESP"
-		BB.Adornee = root
-		BB.Size = UDim2.new(0, 200, 0, 50)
-		BB.StudsOffset = Vector3.new(0, 3, 0)
-		BB.AlwaysOnTop = true
-		BB.Parent = ESPFolder
-		local Label = Instance.new("TextLabel")
-		Label.Size = UDim2.new(1, 0, 1, 0)
-		Label.BackgroundTransparency = 1
-		Label.TextColor3 = color
-		Label.TextSize = Settings.EspSize
-		Label.Font = Enum.Font.GothamBold
-		Label.Parent = BB
-		ESPStorage[targetPlayer] = {Billboard = BB, Label = Label, Highlight = nil}
-		cache = ESPStorage[targetPlayer]
+	-- BILLBOARD (NAME / HEALTH / TEXT ESP)
+	if Settings.ESP then
+		if not cache.Billboard or not cache.Billboard.Parent then
+			local BB = Instance.new("BillboardGui")
+			BB.Name = targetPlayer.Name .. "_ESP"
+			BB.Adornee = root
+			BB.Size = UDim2.new(0, 200, 0, 50)
+			BB.StudsOffset = Vector3.new(0, 3, 0)
+			BB.AlwaysOnTop = true
+			BB.Parent = ESPFolder
+			local Label = Instance.new("TextLabel")
+			Label.Size = UDim2.new(1, 0, 1, 0)
+			Label.BackgroundTransparency = 1
+			Label.TextColor3 = color
+			Label.TextSize = Settings.EspSize
+			Label.Font = Enum.Font.GothamBold
+			Label.Parent = BB
+			cache.Billboard = BB
+			cache.Label = Label
+		end
+		cache.Label.TextColor3 = color
+		cache.Label.TextSize = Settings.EspSize
+		cache.Label.Text = Settings.ShowHealth and string.format("%s [%d HP]", displayName, math.floor(hum.Health)) or displayName
+	else
+		if cache.Billboard then
+			cache.Billboard:Destroy()
+			cache.Billboard = nil
+			cache.Label = nil
+		end
 	end
 
-	cache.Label.TextColor3 = color
-	cache.Label.TextSize = Settings.EspSize
-	cache.Label.Text = Settings.ShowHealth and string.format("%s [%d HP]", displayName, math.floor(hum.Health)) or displayName
-
+	-- HIGHLIGHT (CHAMS INDEPENDENTE)
 	if Settings.Chams then
 		if not cache.Highlight or not cache.Highlight.Parent then
 			local Highlight = Instance.new("Highlight")
@@ -2274,14 +2307,22 @@ local function UpdatePlayerESP(targetPlayer)
 			cache.Highlight.FillColor = color
 			cache.Highlight.Adornee = char
 		end
-	elseif cache.Highlight then
-		cache.Highlight:Destroy()
-		cache.Highlight = nil
+	else
+		if cache.Highlight then
+			cache.Highlight:Destroy()
+			cache.Highlight = nil
+		end
+	end
+
+	if not cache.Billboard and not cache.Highlight then
+		RemoveESP(targetPlayer)
+	else
+		ESPStorage[targetPlayer] = cache
 	end
 end
 
 local function UpdateESP()
-	if Destroyed or not Settings.ESP then ClearAllESP() return end
+	if Destroyed or (not Settings.ESP and not Settings.Chams) then ClearAllESP() return end
 	for _, targetPlayer in ipairs(Players:GetPlayers()) do UpdatePlayerESP(targetPlayer) end
 end
 
@@ -2309,7 +2350,7 @@ local function ApplyTeleportQueue()
 	end
 end
 
--- AMBIENTE COMPARTILHADO COM OS MODULOS
+-- AMBIENTE COMPARTILHADO PARA OS MODULOS DO GITHUB
 getgenv().ToxEnv = {
     Settings = Settings,
     Pages = Pages,
@@ -2334,6 +2375,7 @@ getgenv().ToxEnv = {
     StartNoFall = StartNoFall, StopNoFall = StopNoFall,
     StartAntiVoid = StartAntiVoid, StopAntiVoid = StopAntiVoid,
     StartAntiFling = StartAntiFling, StopAntiFling = StopAntiFling,
+    StartWalkFling = StartWalkFling, StopWalkFling = StopWalkFling,
     StartAntiAFK = StartAntiAFK, StopAntiAFK = StopAntiAFK,
     StartChatLogs = StartChatLogs, StopChatLogs = StopChatLogs,
     StartSpectate = StartSpectate, StopSpectate = StopSpectate,
@@ -2353,14 +2395,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript.lua"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
 
--- INICIALIZACAO DE SISTEMAS
+-- INICIALIZAÇÃO DE SISTEMAS
 if Settings.AntiFling then StartAntiFling() end
+if Settings.WalkFling then StartWalkFling() end
 if Settings.AntiAFK then StartAntiAFK() end
 if Settings.AntiVoid then StartAntiVoid() end
 if Settings.NoFallDamage then StartNoFall() end
 if Settings.ChatLogs then StartChatLogs() ChatLogGui.Visible = true end
 
--- ANIMACAO DE CARREGAMENTO
+-- SPLASH SCREEN ANIMATION
 local function ShowCenterLoadSequence()
     local SplashFrame = Instance.new("Frame")
     SplashFrame.Size = UDim2.new(0, 320, 0, 95)
@@ -2494,7 +2537,7 @@ RunService.RenderStepped:Connect(function()
 	UpdateMovement()
     UpdateFreecam()
 	if Settings.Float then UpdateFloat() end
-	if Settings.ESP then UpdateESP() end
+	if Settings.ESP or Settings.Chams then UpdateESP() end
     if Settings.FOVEnabled then workspace.CurrentCamera.FieldOfView = Settings.FOVValue end
 end)
 
@@ -2503,6 +2546,7 @@ Player.CharacterAdded:Connect(function()
 	UpdateCharacter()
 	if Settings.Noclip then StartNoclip() end
 	if Settings.AntiFling then StartAntiFling() end
+	if Settings.WalkFling then StartWalkFling() end
 	if Settings.AntiVoid then StartAntiVoid() end
 	if Settings.NoFallDamage then StartNoFall() end
     if Settings.Freecam then ToggleFreecam(true) end
