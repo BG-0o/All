@@ -28,7 +28,7 @@ end
 GetCharacter()
 LocalPlayer.CharacterAdded:Connect(GetCharacter)
 
--- SPEED & JUMP
+-- SPEED & JUMP POWER
 RunService.RenderStepped:Connect(function()
     if env.Destroyed or not Humanoid then return end
     if Settings.Speed then Humanoid.WalkSpeed = Settings.SpeedValue end
@@ -45,7 +45,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- NOCLIP COM DESATIVAÇÃO CORRETA
+-- NOCLIP (RESTAURA COLISÃO CORRETAMENTE AO DESLIGAR)
 local noclipConn
 local function StartNoclip()
     if noclipConn then noclipConn:Disconnect() end
@@ -97,7 +97,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- FLY CAR LOGIC COM NOTIFICAÇÃO DE ASSENTO
+-- FLY CAR LOGIC COM NOTIFICAÇÃO SE NÃO ESTIVER SENTADO
 local flyCarVel, flyCarGyro, flyCarConn
 local function StopFlyCar()
 	if flyCarConn then flyCarConn:Disconnect(); flyCarConn = nil end
@@ -115,8 +115,8 @@ local function StartFlyCar()
 	end
 
 	local Root = Seat.Parent:IsA("Model") and (Seat.Parent.PrimaryPart or Seat) or Seat
-	flyCarVel = Instance.new("BodyVelocity") flyCarVel.MaxForce = Vector3.new(1e9, 1e9, 1e9); flyCarVel.Parent = Root
-	flyCarGyro = Instance.new("BodyGyro") flyCarGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9); flyCarGyro.CFrame = Root.CFrame; flyCarGyro.Parent = Root
+	flyCarVel = Instance.new("BodyVelocity"); flyCarVel.MaxForce = Vector3.new(1e9, 1e9, 1e9); flyCarVel.Parent = Root
+	flyCarGyro = Instance.new("BodyGyro"); flyCarGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9); flyCarGyro.CFrame = Root.CFrame; flyCarGyro.Parent = Root
 
 	flyCarConn = RunService.RenderStepped:Connect(function()
 		if env.Destroyed or not Settings.FlyCar or not Seat or not Seat.Parent then
@@ -158,7 +158,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- TELEPORT HELPERS
+-- TELEPORT LOGIC
 local loopTPConn, loopTPPlayer
 local function GetPlayerByNick(Name)
 	if not Name or Name == "" then return nil end
@@ -182,7 +182,7 @@ local function TeleportToPlayer(targetName)
 	end
 end
 
--- CONSTRUÇÃO DOS ELEMENTOS DA ABA PLAYER (EXATAMENTE COMO NO SEU SCRIPT ANTIGO)
+-- BOTÕES DA ABA PLAYER
 CreateToggleWithValue("WalkSpeed", PlayerPage, Settings.Speed, Settings.SpeedValue, function(v)
     Settings.Speed = v
     if not v and Humanoid then Humanoid.WalkSpeed = 16 end
