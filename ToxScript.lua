@@ -13,7 +13,7 @@ CreateButton("Infinite Yield", ScriptsPage, function()
 end)
 
 CreateButton("FE Emotes", ScriptsPage, function()
-    loadstring(game:HttpGet(('https://raw.githubusercontent.com/VenezzaX/Useful-things/refs/heads/main/FeEmotes.lua'),true))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/VenezzaX/Useful-things/main/FeEmotes.lua"))()
 end)
 
 CreateButton("Bundle Edit", ScriptsPage, function()
@@ -21,9 +21,9 @@ CreateButton("Bundle Edit", ScriptsPage, function()
 end)
 
 CreateButton("Wall Walk", ScriptsPage, function()
-    loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/wallwalker.lua"))()
 end)
 
 CreateButton("PShade", ScriptsPage, function()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua'))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua"))()
 end)
