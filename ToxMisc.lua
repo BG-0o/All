@@ -1,16 +1,16 @@
 -- ========================================================
--- ToxMisc.lua - Módulo com todas as opções de MISC
+-- ToxMisc.lua - Módulo para a Aba MISC
 -- ========================================================
 
 local env = getgenv().ToxEnv
 if not env then return end
 
-local MiscPage = env.MiscPage or env.FlingPage
+local MiscPage = env.MiscPage
 local Settings = env.Settings
 
 local CreateToggle = env.CreateToggle
 local CreateInputWithButton = env.CreateInputWithButton
-local CreateButton = env.CreateButton
+local CreateTeleportRow = env.CreateTeleportRow
 local CustomNotify = env.CustomNotify
 
 local Players = game:GetService("Players")
@@ -18,7 +18,7 @@ local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = env.Player
 
--- LÓGICA DO FLING
+-- FLING LOGIC
 local function SkidFling(TargetPlayer)
 	if not TargetPlayer or not TargetPlayer.Character then return end
 
@@ -27,8 +27,7 @@ local function SkidFling(TargetPlayer)
 	local RootPart = Humanoid and Humanoid.RootPart or Character:FindFirstChild("HumanoidRootPart")
 
 	local TCharacter = TargetPlayer.Character
-	local THumanoid = TCharacter:FindFirstChildOfClass("Humanoid")
-	local TRootPart = THumanoid and THumanoid.RootPart or TCharacter:FindFirstChild("HumanoidRootPart")
+	local TRootPart = TCharacter and TCharacter:FindFirstChild("HumanoidRootPart")
 
 	if Character and Humanoid and RootPart and TRootPart then
 		pcall(function() Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false) end)
@@ -137,47 +136,39 @@ local function SetAntiAFK(enabled)
 	end
 end
 
--- NO FALL DAMAGE
-local NoFallConn
-local function SetNoFall(enabled)
-	Settings.NoFallDamage = enabled
-	if NoFallConn then NoFallConn:Disconnect() NoFallConn = nil end
-	if enabled then
-		NoFallConn = RunService.PreRender:Connect(function()
-			if env.Destroyed or not Settings.NoFallDamage then SetNoFall(false) return end
-			local char = LocalPlayer.Character
-			local root = char and char:FindFirstChild("HumanoidRootPart")
-			if root and root.AssemblyLinearVelocity.Y < -75 then
-				root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, -75, root.AssemblyLinearVelocity.Z)
-			end
-		end)
-	end
-end
-
--- ========================================================
--- DESENHANDO OS BOTÕES DA ABA MISC
--- ========================================================
-
+-- BOTÕES DA ABA MISC
 CreateInputWithButton("Target Fling", MiscPage, "", "Fling", function(txt)
 	ExecuteFling(txt)
 end)
 
-CreateToggle("Walk Fling", MiscPage, Settings.WalkFling, function(v)
-	SetWalkFling(v)
+CreateToggle("Walk Fling", MiscPage, Settings.WalkFling, function(v) SetWalkFling(v) end)
+CreateToggle("Anti Fling", MiscPage, Settings.AntiFling, function(v) SetAntiFling(v) end)
+CreateToggle("Anti AFK", MiscPage, Settings.AntiAFK, function(v) SetAntiAFK(v) end)
+
+CreateTeleportRow("Teleport To", MiscPage, function(target)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and (p.Name:lower():sub(1, #target) == target:lower() or p.DisplayName:lower():sub(1, #target) == target:lower()) then
+            if LocalPlayer.Character and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character:SetPrimaryPartCFrame(p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
+            end
+            break
+        end
+    end
+end, function(enabled, target)
+    Settings.LoopTP = enabled
+    task.spawn(function()
+        while Settings.LoopTP and not env.Destroyed do
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and (p.Name:lower():sub(1, #target) == target:lower() or p.DisplayName:lower():sub(1, #target) == target:lower()) then
+                    if LocalPlayer.Character and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character:SetPrimaryPartCFrame(p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
 end)
 
-CreateToggle("Anti Fling", MiscPage, Settings.AntiFling, function(v)
-	SetAntiFling(v)
-end)
-
-CreateToggle("Anti AFK", MiscPage, Settings.AntiAFK, function(v)
-	SetAntiAFK(v)
-end)
-
-CreateToggle("No Fall Damage", MiscPage, Settings.NoFallDamage, function(v)
-	SetNoFall(v)
-end)
-
--- Ativar padrões
 if Settings.AntiFling then SetAntiFling(true) end
 if Settings.AntiAFK then SetAntiAFK(true) end
