@@ -1,37 +1,29 @@
-local Tox = getgenv().Tox
-local Page = Tox.Pages["CONFIG"]
-local Settings = Tox.Settings
-local S = Tox.Services
+local E = getgenv().ToxEnv
+local Settings = E.Settings
+local ConfigPage = E.Pages["CONFIG"]
 
-Tox.UI.CreateToggle("Anti AFK", Page, Settings.AntiAFK, function(v) Settings.AntiAFK = v end)
-Tox.UI.CreateToggle("3D Rendering", Page, Settings.Render3D, function(v)
-    Settings.Render3D = v
-    pcall(function() S.RunService:Set3dRenderingEnabled(v) end)
+E.CreateToggle("Anti AFK", ConfigPage, Settings.AntiAFK, function(v) Settings.AntiAFK = v if v then E.StartAntiAFK() else E.StopAntiAFK() end end)
+E.CreateToggle("Chat Logs", ConfigPage, Settings.ChatLogs, function(v) 
+    Settings.ChatLogs = v 
+    E.ChatLogGui.Visible = v
+    if v then E.StartChatLogs() else E.StopChatLogs() end 
+end)
+E.CreateToggle("3D Rendering", ConfigPage, Settings.Render3D, function(v) E.Toggle3DRendering(v) end)
+E.CreateKeybind("GUI Keybind", ConfigPage, Settings.GUIKeybind, function(key) Settings.GUIKeybind = key end)
+
+E.CreateButton("Rejoin", ConfigPage, function()
+	E.ApplyTeleportQueue()
+	if #E.Players:GetPlayers() <= 1 then
+		E.TeleportService:Teleport(game.PlaceId, E.Player)
+	else
+		E.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, E.Player)
+	end
 end)
 
-Tox.UI.CreateKeybind("GUI Keybind", Page, Settings.GUIKeybind, function(key)
-    Settings.GUIKeybind = key
-end)
-
-Tox.UI.CreateButton("Rejoin", Page, function()
-    if #S.Players:GetPlayers() <= 1 then
-        S.TeleportService:Teleport(game.PlaceId, Tox.Player)
-    else
-        S.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Tox.Player)
-    end
-end)
-
-Tox.UI.CreateButton("DESTROY GUI", Page, function()
-    Tox.Destroyed = true
-    pcall(function() S.RunService:Set3dRenderingEnabled(true) end)
-    if Tox.Gui then Tox.Gui:Destroy() end
-    if Tox.NotifGui then Tox.NotifGui:Destroy() end
-end)
-
--- Anti AFK Event
-Tox.Player.Idled:Connect(function()
-    if Settings.AntiAFK and not Tox.Destroyed then
-        S.VirtualUser:CaptureController()
-        S.VirtualUser:ClickButton2(Vector2.new(0, 0))
-    end
+E.CreateButton("DESTROY", ConfigPage, function()
+	E.StopFly() E.StopFlyCar() E.StopFloat() E.DisableNoclip() E.StopAntiFling() E.StopAntiAFK() E.StopAntiVoid() E.StopNoFall() E.ClearAllESP() E.StopSpectate() E.StopLoopTP() E.StopChatLogs() E.ToggleFullbright(false) E.ToggleFreecam(false) E.Toggle3DRendering(true)
+	if E.CustomSound then E.CustomSound:Stop() E.CustomSound:Destroy() end
+    if E.Humanoid then E.Humanoid.WalkSpeed = 16 E.Humanoid.JumpPower = 50 end
+    E.NotifGui:Destroy()
+	E.Gui:Destroy()
 end)
