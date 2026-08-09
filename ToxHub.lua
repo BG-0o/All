@@ -93,6 +93,7 @@ local Character
 local Humanoid
 local RootPart
 local Destroyed = false
+local IsLoaded = false
 
 local OriginalLighting = {
     Ambient = Lighting.Ambient,
@@ -1768,7 +1769,7 @@ local function ExecuteFling(TargetInput)
 	end
 end
 
--- WALK FLING SYSTEM
+-- WALK FLING SYSTEM (SEM GIRAR E SEM FLUTUAR)
 local WalkFlingConnection
 local function StopWalkFling()
 	if WalkFlingConnection then
@@ -1779,14 +1780,14 @@ end
 
 local function StartWalkFling()
 	StopWalkFling()
-	WalkFlingConnection = RunService.Heartbeat:Connect(function()
+	WalkFlingConnection = RunService.PostSimulation:Connect(function()
 		if Destroyed or not Settings.WalkFling or not Character or not RootPart or not Humanoid or Humanoid.Health <= 0 then
 			StopWalkFling()
 			return
 		end
 		local vel = RootPart.AssemblyLinearVelocity
-		RootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 15, vel.Z)
-		RootPart.AssemblyAngularVelocity = Vector3.new(0, 999999, 0)
+		RootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
+		RootPart.AssemblyAngularVelocity = Vector3.new(0, 10000, 0)
 	end)
 end
 
@@ -1973,6 +1974,7 @@ local function StopFly()
 	if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
 	if FlyVelocity then FlyVelocity:Destroy() FlyVelocity = nil end
 end
+
 local function StartFly()
 	if not RootPart then return end
 	StopFly()
@@ -2385,25 +2387,10 @@ getgenv().ToxEnv = {
     ApplyTeleportQueue = ApplyTeleportQueue,
     MusicGui = MusicGui, ChatLogGui = ChatLogGui, NotifGui = NotifGui, Gui = Gui,
     Player = Player, Humanoid = Humanoid, Destroyed = Destroyed, CustomSound = CustomSound,
-    Players = Players, TeleportService = TeleportService
+    Players = Players, TeleportService = TeleportService, UpdateMovement = UpdateMovement
 }
 
--- CARREGAMENTO DOS SCRIPTS DO GITHUB
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer.lua"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals.lua"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat.lua"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript.lua"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
-
--- INICIALIZAÇÃO DE SISTEMAS
-if Settings.AntiFling then StartAntiFling() end
-if Settings.WalkFling then StartWalkFling() end
-if Settings.AntiAFK then StartAntiAFK() end
-if Settings.AntiVoid then StartAntiVoid() end
-if Settings.NoFallDamage then StartNoFall() end
-if Settings.ChatLogs then StartChatLogs() ChatLogGui.Visible = true end
-
--- SPLASH SCREEN ANIMATION
+-- ANIMACAO DE CARREGAMENTO (AS OPÇÕES E MODULOS SÓ CARREGAM APÓS A BARRA TERMINAR)
 local function ShowCenterLoadSequence()
     local SplashFrame = Instance.new("Frame")
     SplashFrame.Size = UDim2.new(0, 320, 0, 95)
@@ -2520,6 +2507,27 @@ local function ShowCenterLoadSequence()
                 0.5,
                 true
             )
+
+            -- MARCAR COMO CARREGADO
+            IsLoaded = true
+
+            -- CARREGAMENTO DOS SCRIPTS E ATIVAÇÕES SOMENTE APÓS A GUI APARECER
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
+
+            if Settings.AntiFling then StartAntiFling() end
+            if Settings.WalkFling then StartWalkFling() end
+            if Settings.AntiAFK then StartAntiAFK() end
+            if Settings.AntiVoid then StartAntiVoid() end
+            if Settings.NoFallDamage then StartNoFall() end
+            if Settings.ChatLogs then StartChatLogs() ChatLogGui.Visible = true end
+            if Settings.Fly then StartFly() end
+            if Settings.FlyCar then StartFlyCar() end
+            if Settings.Fullbright then ToggleFullbright(true) end
+            if Settings.Freecam then ToggleFreecam(true) end
         end
     end)
 end
@@ -2541,15 +2549,24 @@ RunService.RenderStepped:Connect(function()
     if Settings.FOVEnabled then workspace.CurrentCamera.FieldOfView = Settings.FOVValue end
 end)
 
+-- RE-ATIVAÇÃO PERMANENTE DE OPÇÕES APÓS MORRER / RESPAWN
 Player.CharacterAdded:Connect(function()
 	task.wait(0.5)
 	UpdateCharacter()
+	if not IsLoaded then return end
+
+	if Settings.Speed or Settings.Jump then UpdateMovement() end
+	if Settings.Fly then StartFly() end
+	if Settings.FlyCar then StartFlyCar() end
+	if Settings.Float then UpdateFloat() end
 	if Settings.Noclip then StartNoclip() end
 	if Settings.AntiFling then StartAntiFling() end
 	if Settings.WalkFling then StartWalkFling() end
 	if Settings.AntiVoid then StartAntiVoid() end
 	if Settings.NoFallDamage then StartNoFall() end
     if Settings.Freecam then ToggleFreecam(true) end
+    if Settings.Fullbright then ToggleFullbright(true) end
+    if Settings.ESP or Settings.Chams then UpdateESP() end
 end)
 
 local Minimized = false
