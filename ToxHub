@@ -1,3 +1,4 @@
+-- [[ TOX V1 - HUB MAIN LOADER ]]
 getgenv().Tox = {
     Services = {
         Players = game:GetService("Players"),
@@ -13,14 +14,10 @@ getgenv().Tox = {
         HttpService = game:GetService("HttpService")
     },
     ColorMap = {
-        ["White"] = Color3.fromRGB(255, 255, 255),
-        ["Red"] = Color3.fromRGB(255, 50, 50),
-        ["Green"] = Color3.fromRGB(50, 255, 50),
-        ["Blue"] = Color3.fromRGB(50, 150, 255),
-        ["Yellow"] = Color3.fromRGB(255, 255, 50),
-        ["Cyan"] = Color3.fromRGB(50, 255, 255),
-        ["Magenta"] = Color3.fromRGB(255, 50, 255),
-        ["Orange"] = Color3.fromRGB(255, 150, 50),
+        ["White"] = Color3.fromRGB(255, 255, 255), ["Red"] = Color3.fromRGB(255, 50, 50),
+        ["Green"] = Color3.fromRGB(50, 255, 50), ["Blue"] = Color3.fromRGB(50, 150, 255),
+        ["Yellow"] = Color3.fromRGB(255, 255, 50), ["Cyan"] = Color3.fromRGB(50, 255, 255),
+        ["Magenta"] = Color3.fromRGB(255, 50, 255), ["Orange"] = Color3.fromRGB(255, 150, 50),
         ["Purple"] = Color3.fromRGB(150, 50, 255)
     },
     Settings = {
@@ -51,7 +48,7 @@ Tox.Player = Player
 Tox.MAIN_COLOR = Color3.fromRGB(9, 0, 136)
 Tox.LOGO_ID = "rbxassetid://120675082996894"
 
--- Sistema de Configuração
+-- Sistema de Configuração Local
 local FolderName = "ToxV1_Data"
 local ConfigFilePath = FolderName .. "/config.json"
 
@@ -79,7 +76,7 @@ function Tox.LoadConfiguration()
 end
 Tox.LoadConfiguration()
 
--- Notificações
+-- Notificações na Tela
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "ToxNotifs"
 NotifGui.DisplayOrder = 999
@@ -129,7 +126,7 @@ function Tox.CustomNotify(text, color)
     end)
 end
 
--- GUI Principal
+-- ScreenGui da Interface Principal
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "ToxV1Gui"
 Gui.ResetOnSpawn = false
@@ -138,8 +135,8 @@ Gui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
 Tox.Gui = Gui
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 0, 0, 0)
-Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.Size = UDim2.new(0, 330, 0, 395)
+Main.Position = UDim2.new(0.5, -165, 0.5, -197)
 Main.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
 Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
@@ -244,7 +241,7 @@ PlayerPage.Visible = true
 PlayerTab.BackgroundColor3 = Tox.MAIN_COLOR
 PlayerTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- Criadores de UI genéricos para as Abas usarem
+-- Funções Criadoras de Elementos da UI
 function Tox.UI.CreateToggle(Name, Page, DefaultValue, Callback)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(1, -5, 0, 39)
@@ -297,16 +294,14 @@ function Tox.UI.CreateButton(Name, Page, Callback)
 end
 
 -- ========================================================
--- CARREGAMENTO DAS ABAS VIA GITHUB
+-- CARREGAMENTO DAS ABAS VIA LINKS DIRETOS DO GITHUB
 -- ========================================================
-loadstring(game:HttpGet(baseUrl .. "tab_player.lua"))()
-loadstring(game:HttpGet(baseUrl .. "tab_visuals.lua"))()
-loadstring(game:HttpGet(baseUrl .. "tab_misc.lua"))()
-loadstring(game:HttpGet(baseUrl .. "tab_scripts.lua"))()
-loadstring(game:HttpGet(baseUrl .. "tab_config.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig"))()
 
--- Animação de Entrada
-Main.Size = UDim2.new(0, 330, 0, 395)
-Main.Position = UDim2.new(0.5, -165, 0.5, -197)
+-- Exibir Menu
 Main.Visible = true
 Tox.CustomNotify("Tox v1 Carregado com Sucesso!", Color3.fromRGB(100, 255, 100))
