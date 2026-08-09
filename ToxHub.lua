@@ -1,4 +1,4 @@
--- ToxHub.lua (Tox v1 Utility Suite Completa)
+-- ToxHub.lua (Tox v1 Utility Suite Completa com AIM & CONFIGS)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -54,6 +54,7 @@ local Settings = {
     FOVValue = 70,
     Spectating = false,
     LoopTP = false,
+
 	SpeedValue = 16,
 	JumpValue = 50,
 	FlySpeed = 5,
@@ -61,6 +62,20 @@ local Settings = {
 	FloatStrength = 7,
 	UpBind = Enum.KeyCode.E,
 	DownBind = Enum.KeyCode.Q,
+
+    -- COMBAT & AIM CONFIGS
+    Aimbot = false,
+    AimbotSmoothness = 2,
+    AimPart = "Head",
+    ShowFOV = false,
+    FOVRadius = 120,
+    SilentAim = false,
+    SilentAimFOV = 100,
+    HitboxExpander = false,
+    HitboxSize = 10,
+    KillAura = false,
+    KillAuraRange = 15,
+
 	ESP = false,
 	EspColorName = "White",
 	EspColor = Color3.fromRGB(255, 255, 255),
@@ -76,28 +91,17 @@ local Settings = {
 	Tracers = false,
 	DisableTeam = false,
 	ShowTeamColor = false,
+
 	GUIKeybind = Enum.KeyCode.LeftAlt,
     MusicAutoPlay = false,
     MusicLoop = false
 }
 
 local SavedIDs = {} 
-local CurrentTrackIndex = 1
-
 local Character
 local Humanoid
 local RootPart
 local Destroyed = false
-
-local OriginalLighting = {
-    Ambient = Lighting.Ambient,
-    OutdoorAmbient = Lighting.OutdoorAmbient,
-    Brightness = Lighting.Brightness,
-    ClockTime = Lighting.ClockTime,
-    FogEnd = Lighting.FogEnd,
-    FogStart = Lighting.FogStart,
-    GlobalShadows = Lighting.GlobalShadows
-}
 
 local FolderName = "ToxV1_Data"
 local ConfigFilePath = FolderName .. "/config.json"
@@ -150,6 +154,16 @@ local function AutoSaveConfiguration()
             Fullbright = Settings.Fullbright,
             FOVEnabled = Settings.FOVEnabled,
             FOVValue = Settings.FOVValue,
+            Aimbot = Settings.Aimbot,
+            AimbotSmoothness = Settings.AimbotSmoothness,
+            AimPart = Settings.AimPart,
+            ShowFOV = Settings.ShowFOV,
+            FOVRadius = Settings.FOVRadius,
+            SilentAim = Settings.SilentAim,
+            HitboxExpander = Settings.HitboxExpander,
+            HitboxSize = Settings.HitboxSize,
+            KillAura = Settings.KillAura,
+            KillAuraRange = Settings.KillAuraRange,
             GUIKeybind = Settings.GUIKeybind and Settings.GUIKeybind.Name or "LeftAlt",
             MusicAutoPlay = Settings.MusicAutoPlay,
             MusicLoop = Settings.MusicLoop
@@ -162,8 +176,6 @@ local function AutoSaveConfiguration()
         writefile(ConfigFilePath, json)
     end)
 end
-
-local RenderSavedIDs 
 
 local function LoadConfiguration()
     if not isfile or not readfile or not isfile(ConfigFilePath) then return end
@@ -187,7 +199,6 @@ local function LoadConfiguration()
             end
             if data.SavedIDs then
                 SavedIDs = data.SavedIDs
-                if RenderSavedIDs then RenderSavedIDs() end
             end
         end
     end)
@@ -195,7 +206,17 @@ end
 
 LoadConfiguration()
 
--- SIS DE NOTIFICAÇÕES
+-- FOV CIRCLE DRAWING
+local FOVCircle = (Drawing and Drawing.new) and Drawing.new("Circle") or nil
+if FOVCircle then
+    FOVCircle.Color = Color3.fromRGB(0, 200, 255)
+    FOVCircle.Thickness = 1.5
+    FOVCircle.NumSides = 60
+    FOVCircle.Filled = false
+    FOVCircle.Visible = false
+end
+
+-- SISTEMA DE NOTIFICAÇÕES
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "ToxNotifs"
 NotifGui.DisplayOrder = 999
@@ -264,14 +285,6 @@ local function CustomNotify(text, color)
     end)
 end
 
-Players.PlayerAdded:Connect(function(p)
-    CustomNotify(p.DisplayName .. " joined", Color3.fromRGB(100, 255, 100))
-end)
-
-Players.PlayerRemoving:Connect(function(p)
-    CustomNotify(p.DisplayName .. " left", Color3.fromRGB(255, 100, 100))
-end)
-
 local function UpdateCharacter()
 	if Destroyed then return end
 	Character = Player.Character or Player.CharacterAdded:Wait()
@@ -281,14 +294,7 @@ end
 
 UpdateCharacter()
 
-local ParentContainer
-pcall(function()
-	ParentContainer = (gethui and gethui()) or game:GetService("CoreGui")
-end)
-if not ParentContainer then
-	ParentContainer = Player:WaitForChild("PlayerGui")
-end
-
+local ParentContainer = (gethui and gethui()) or game:GetService("CoreGui")
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "ToxV1Gui"
 Gui.ResetOnSpawn = false
@@ -334,9 +340,7 @@ TopBar.InputBegan:Connect(function(input)
 		StartPos = Main.Position
 
 		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				Dragging = false
-			end
+			if input.UserInputState == Enum.UserInputState.End then Dragging = false end
 		end)
 	end
 end)
@@ -396,12 +400,6 @@ Tabs.ScrollBarImageColor3 = MAIN_COLOR
 Tabs.ScrollingDirection = Enum.ScrollingDirection.X
 Tabs.CanvasSize = UDim2.new(0, 0, 0, 0)
 Tabs.Parent = Main
-
-Tabs.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseWheel then
-		Tabs.CanvasPosition = Vector2.new(math.clamp(Tabs.CanvasPosition.X - (input.Position.Z * 25), 0, Tabs.AbsoluteCanvasSize.X - Tabs.AbsoluteWindowSize.X), 0)
-	end
-end)
 
 local TabLayout = Instance.new("UIListLayout")
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -588,76 +586,6 @@ ChatLogMinBtn.MouseButton1Click:Connect(function()
     ChatLogMinBtn.Text = ChatLogMinState and "+" or "-"
 end)
 
-local ChatLogLayout = Instance.new("UIListLayout")
-ChatLogLayout.Padding = UDim.new(0, 4)
-ChatLogLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ChatLogLayout.Parent = ChatLogScroll
-
-ChatLogLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ChatLogScroll.CanvasSize = UDim2.new(0, 0, 0, ChatLogLayout.AbsoluteContentSize.Y + 10)
-    ChatLogScroll.CanvasPosition = Vector2.new(0, ChatLogLayout.AbsoluteContentSize.Y)
-end)
-
-ClearBtn.MouseButton1Click:Connect(function()
-    for _, child in ipairs(ChatLogScroll:GetChildren()) do
-        if child:IsA("TextLabel") then child:Destroy() end
-    end
-end)
-
-local CLDragging, CLDragInput, CLDragStart, CLStartPos
-ChatLogTopBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		CLDragging = true
-		CLDragStart = input.Position
-		CLStartPos = ChatLogGui.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then CLDragging = false end
-		end)
-	end
-end)
-ChatLogTopBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		CLDragInput = input
-	end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if input == CLDragInput and CLDragging then
-		local Delta = input.Position - CLDragStart
-		ChatLogGui.Position = UDim2.new(CLStartPos.X.Scale, CLStartPos.X.Offset + Delta.X, CLStartPos.Y.Scale, CLStartPos.Y.Offset + Delta.Y)
-	end
-end)
-
-local LastChatCache = {}
-local function AddChatLog(p, msg)
-    if not Settings.ChatLogs or Destroyed or not p then return end
-
-    local cleanMsg = tostring(msg):gsub("[^%g%s]+", "")
-    if cleanMsg == "" then return end
-
-    local pName = p.DisplayName or p.Name
-    local cacheKey = pName .. ":" .. cleanMsg
-
-    if LastChatCache[cacheKey] and (tick() - LastChatCache[cacheKey]) < 0.8 then
-        return
-    end
-    LastChatCache[cacheKey] = tick()
-
-    local timestamp = os.date("%H:%M:%S")
-    local logText = string.format("[%s] %s: %s", timestamp, pName, cleanMsg)
-
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -6, 0, 0)
-    Label.AutomaticSize = Enum.AutomaticSize.Y
-    Label.BackgroundTransparency = 1
-    Label.Text = logText
-    Label.TextColor3 = Color3.fromRGB(240, 240, 240)
-    Label.Font = Enum.Font.GothamMedium
-    Label.TextSize = 13
-    Label.TextWrapped = true
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = ChatLogScroll
-end
-
 -- MUSIC PLAYER GUI (COM BOTÃO DE MINIMIZAR "-")
 local MusicGui = Instance.new("Frame")
 MusicGui.Name = "MusicPlayerFrame"
@@ -706,10 +634,6 @@ MusicMinBtn.Font = Enum.Font.GothamBold
 MusicMinBtn.TextSize = 14
 MusicMinBtn.Parent = MusicTopBar
 
-local MusicMinCorner = Instance.new("UICorner")
-MusicMinCorner.CornerRadius = UDim.new(0, 4)
-MusicMinCorner.Parent = MusicMinBtn
-
 local MusicCloseBtn = Instance.new("TextButton")
 MusicCloseBtn.Size = UDim2.new(0, 24, 0, 22)
 MusicCloseBtn.Position = UDim2.new(1, -28, 0.5, -11)
@@ -720,10 +644,6 @@ MusicCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MusicCloseBtn.Font = Enum.Font.GothamBold
 MusicCloseBtn.TextSize = 11
 MusicCloseBtn.Parent = MusicTopBar
-
-local MusicCloseCorner = Instance.new("UICorner")
-MusicCloseCorner.CornerRadius = UDim.new(0, 4)
-MusicCloseCorner.Parent = MusicCloseBtn
 
 local MusicContent = Instance.new("Frame")
 MusicContent.Size = UDim2.new(1, -16, 1, -40)
@@ -743,106 +663,7 @@ MusicCloseBtn.MouseButton1Click:Connect(function()
     MusicGui.Visible = false
 end)
 
-local MDragging, MDragInput, MDragStart, MStartPos
-MusicTopBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		MDragging = true
-		MDragStart = input.Position
-		MStartPos = MusicGui.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then MDragging = false end
-		end)
-	end
-end)
-MusicTopBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		MDragInput = input
-	end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if input == MDragInput and MDragging then
-		local Delta = input.Position - MDragStart
-		MusicGui.Position = UDim2.new(MStartPos.X.Scale, MStartPos.X.Offset + Delta.X, MStartPos.Y.Scale, MStartPos.Y.Offset + Delta.Y)
-	end
-end)
-
-local CustomSound = Instance.new("Sound")
-CustomSound.Name = "ToxMusicSound"
-CustomSound.Looped = false
-CustomSound.Volume = 1
-CustomSound.Parent = SoundService
-
-local IDInput = Instance.new("TextBox")
-IDInput.Size = UDim2.new(0, 130, 0, 26)
-IDInput.Position = UDim2.new(0, 0, 0, 0)
-IDInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
-IDInput.BorderSizePixel = 0
-IDInput.PlaceholderText = "Sound ID..."
-IDInput.Text = ""
-IDInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-IDInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-IDInput.Font = Enum.Font.Gotham
-IDInput.TextSize = 11
-IDInput.ClearTextOnFocus = false
-IDInput.Parent = MusicContent
-
-local IDInputCorner = Instance.new("UICorner")
-IDInputCorner.CornerRadius = UDim.new(0, 4)
-IDInputCorner.Parent = IDInput
-
-local NameInput = Instance.new("TextBox")
-NameInput.Size = UDim2.new(0, 110, 0, 26)
-NameInput.Position = UDim2.new(0, 134, 0, 0)
-NameInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
-NameInput.BorderSizePixel = 0
-NameInput.PlaceholderText = "Track Name..."
-NameInput.Text = ""
-NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-NameInput.Font = Enum.Font.Gotham
-NameInput.TextSize = 11
-NameInput.ClearTextOnFocus = false
-NameInput.Parent = MusicContent
-
-local NameInputCorner = Instance.new("UICorner")
-NameInputCorner.CornerRadius = UDim.new(0, 4)
-NameInputCorner.Parent = NameInput
-
-local PlayPauseBtn = Instance.new("TextButton")
-PlayPauseBtn.Size = UDim2.new(0, 64, 0, 26)
-PlayPauseBtn.Position = UDim2.new(1, -64, 0, 0)
-PlayPauseBtn.BackgroundColor3 = MAIN_COLOR
-PlayPauseBtn.BorderSizePixel = 0
-PlayPauseBtn.Text = "Play"
-PlayPauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PlayPauseBtn.Font = Enum.Font.GothamBold
-PlayPauseBtn.TextSize = 11
-PlayPauseBtn.Parent = MusicContent
-
-local PlayPauseCorner = Instance.new("UICorner")
-PlayPauseCorner.CornerRadius = UDim.new(0, 4)
-PlayPauseCorner.Parent = PlayPauseBtn
-
-local SavedScroll = Instance.new("ScrollingFrame")
-SavedScroll.Size = UDim2.new(1, 0, 1, -64)
-SavedScroll.Position = UDim2.new(0, 0, 0, 62)
-SavedScroll.BackgroundTransparency = 1
-SavedScroll.BorderSizePixel = 0
-SavedScroll.ScrollBarThickness = 3
-SavedScroll.ScrollBarImageColor3 = MAIN_COLOR
-SavedScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-SavedScroll.Parent = MusicContent
-
-local SavedLayout = Instance.new("UIListLayout")
-SavedLayout.Padding = UDim.new(0, 4)
-SavedLayout.SortOrder = Enum.SortOrder.LayoutOrder
-SavedLayout.Parent = SavedScroll
-
-SavedLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    SavedScroll.CanvasSize = UDim2.new(0, 0, 0, SavedLayout.AbsoluteContentSize.Y + 10)
-end)
-
--- CONSTRUTORES DE INTERFACE
+-- GERADORES DA INTERFACE
 local function CreateToggle(Name, Page, DefaultValue, Callback)
 	local Button = Instance.new("TextButton")
 	Button.Size = UDim2.new(1, -5, 0, 39)
@@ -1211,7 +1032,7 @@ local function ExecuteFling(TargetInput)
 		elseif typeof(TargetObj) == "Instance" and TargetObj:IsA("Player") then
 			SkidFling(TargetObj)
 		else
-			CustomNotify("Username/Target Invalid", Color3.fromRGB(255, 100, 100))
+			CustomNotify("Username Invalid", Color3.fromRGB(255, 100, 100))
 		end
 	end
 end
@@ -1251,9 +1072,44 @@ local function StartAntiVoid()
 	end)
 end
 
--- PREENCHIMENTO DAS ABAS (OPÇÕES)
+-- BUSCA DE JOGADOR MAIS PRÓXIMO PARA O AIMBOT
+local function GetClosestPlayerToMouse()
+    local Closest = nil
+    local ShortestDistance = Settings.FOVRadius or 120
+    local MousePos = UserInputService:GetMouseLocation()
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character then
+            local targetPart = p.Character:FindFirstChild(Settings.AimPart or "Head") or p.Character:FindFirstChild("HumanoidRootPart")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if targetPart and hum and hum.Health > 0 then
+                local ScreenPos, OnScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                if OnScreen then
+                    local Distance = (Vector2.new(ScreenPos.X, ScreenPos.Y) - MousePos).Magnitude
+                    if Distance < ShortestDistance then
+                        ShortestDistance = Distance
+                        Closest = targetPart
+                    end
+                end
+            end
+        end
+    end
+    return Closest
+end
+
+-- PREENCHIMENTO DAS ABAS
+
+-- ABA 1: COMBAT (OPÇÕES COMPLETA DE AIM & FLING)
+CreateToggle("Aimbot (Right Click)", CombatPage, Settings.Aimbot, function(v) Settings.Aimbot = v end)
+CreateToggleWithValue("Aim Smoothness", CombatPage, true, Settings.AimbotSmoothness, function(v) end, function(val) Settings.AimbotSmoothness = val end)
+CreateDropdown("Aim Part", {"Head", "HumanoidRootPart", "Torso"}, CombatPage, Settings.AimPart, function(v) Settings.AimPart = v end)
+CreateToggleWithValue("Show FOV Circle", CombatPage, Settings.ShowFOV, Settings.FOVRadius, function(v) Settings.ShowFOV = v end, function(val) Settings.FOVRadius = val end)
+CreateToggle("Silent Aim", CombatPage, Settings.SilentAim, function(v) Settings.SilentAim = v end)
+CreateToggleWithValue("Hitbox Expander", CombatPage, Settings.HitboxExpander, Settings.HitboxSize, function(v) Settings.HitboxExpander = v end, function(val) Settings.HitboxSize = val end)
+CreateToggleWithValue("Kill Aura", CombatPage, Settings.KillAura, Settings.KillAuraRange, function(v) Settings.KillAura = v end, function(val) Settings.KillAuraRange = val end)
 CreateInputWithButton("Target Fling", CombatPage, "", "Fling", function(text) ExecuteFling(text) end)
 
+-- ABA 2: PLAYER
 CreateToggleWithValue("Speed", PlayerPage, Settings.Speed, Settings.SpeedValue, function(v) Settings.Speed = v end, function(val) Settings.SpeedValue = val end)
 CreateToggleWithValue("Jump", PlayerPage, Settings.Jump, Settings.JumpValue, function(v) Settings.Jump = v end, function(val) Settings.JumpValue = val end)
 CreateToggleWithValue("Fly", PlayerPage, Settings.Fly, Settings.FlySpeed, function(v) Settings.Fly = v end, function(val) Settings.FlySpeed = val end)
@@ -1262,7 +1118,7 @@ CreateToggleWithValue("Float", PlayerPage, Settings.Float, Settings.FloatStrengt
 CreateToggle("Noclip", PlayerPage, Settings.Noclip, function(v) Settings.Noclip = v end)
 CreateToggle("Infinite Jump", PlayerPage, Settings.InfiniteJump, function(v) Settings.InfiniteJump = v end)
 
--- FIX: DROPDOWN DE CORES DO ESP COM SALVAMENTO DE COR
+-- ABA 3: VISUALS
 CreateToggleWithValue("Enable ESP", VisualsPage, Settings.ESP, Settings.EspSize, function(v) Settings.ESP = v end, function(val) Settings.EspSize = val end)
 CreateDropdown("ESP Color", {"White", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "Orange", "Purple"}, VisualsPage, Settings.EspColorName, function(v) 
     Settings.EspColorName = v 
@@ -1270,22 +1126,114 @@ CreateDropdown("ESP Color", {"White", "Red", "Green", "Blue", "Yellow", "Cyan", 
     AutoSaveConfiguration() 
 end)
 
+-- ABA 4: MISC
 CreateToggle("Ctrl Click TP", FlingPage, Settings.CtrlClickTP, function(v) Settings.CtrlClickTP = v end)
 CreateToggle("No Fall Damage", FlingPage, Settings.NoFallDamage, function(v) Settings.NoFallDamage = v end)
 CreateToggle("Anti Void", FlingPage, Settings.AntiVoid, function(v) Settings.AntiVoid = v if v then StartAntiVoid() else StopAntiVoid() end end)
 CreateToggle("Anti Fling", FlingPage, Settings.AntiFling, function(v) Settings.AntiFling = v end)
 CreateInputWithButton("Target Fling", FlingPage, "", "Fling", function(text) ExecuteFling(text) end)
+CreateButton("Music Player", FlingPage, function() MusicGui.Visible = not MusicGui.Visible end)
 
-CreateButton("Music Player", FlingPage, function()
-    MusicGui.Visible = not MusicGui.Visible
-end)
-
+-- ABA 5: SCRIPTS
 CreateButton("Infinite Yield", ScriptsPage, function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 end)
 
+-- ABA 6: CONFIG (OPÇÕES COMPLETAS DE DE SALVAMENTO E RESETAÇÃO)
+CreateButton("Salvar Configurações", ConfigPage, function()
+    AutoSaveConfiguration()
+    CustomNotify("Configurações Salvas com Sucesso!", Color3.fromRGB(100, 255, 100))
+end)
+
+CreateButton("Recarregar Configurações", ConfigPage, function()
+    LoadConfiguration()
+    CustomNotify("Configurações Recarregadas!", Color3.fromRGB(100, 200, 255))
+end)
+
+CreateButton("Resetar Configurações Padrão", ConfigPage, function()
+    if isfile and isfile(ConfigFilePath) then
+        delfile(ConfigFilePath)
+    end
+    CustomNotify("Configurações Resetadas!", Color3.fromRGB(255, 100, 100))
+end)
+
 CreateToggle("Anti AFK", ConfigPage, Settings.AntiAFK, function(v) Settings.AntiAFK = v end)
 CreateToggle("Chat Logs", ConfigPage, Settings.ChatLogs, function(v) Settings.ChatLogs = v ChatLogGui.Visible = v end)
+
+CreateButton("Rejoin Server", ConfigPage, function()
+	if #Players:GetPlayers() <= 1 then
+		TeleportService:Teleport(game.PlaceId, Player)
+	else
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Player)
+	end
+end)
+
+CreateButton("DESTROY / Unload", ConfigPage, function()
+	Destroyed = true
+	if CustomSound then CustomSound:Stop() CustomSound:Destroy() end
+    if FOVCircle then FOVCircle:Destroy() end
+    NotifGui:Destroy()
+	Gui:Destroy()
+end)
+
+-- LOOP EM SEGUNDO PLANO (MOVEMENT, AIMBOT, HITBOX & KILL AURA)
+RunService.RenderStepped:Connect(function()
+	if Destroyed then return end
+    
+    -- Movimento
+    if Humanoid and Humanoid.Health > 0 then
+        Humanoid.WalkSpeed = Settings.Speed and Settings.SpeedValue or 16
+        Humanoid.UseJumpPower = true
+        Humanoid.JumpPower = Settings.Jump and Settings.JumpValue or 50
+    end
+
+    -- FOV Circle Position
+    if FOVCircle then
+        FOVCircle.Visible = Settings.Aimbot and Settings.ShowFOV
+        FOVCircle.Radius = Settings.FOVRadius or 120
+        FOVCircle.Position = UserInputService:GetMouseLocation()
+    end
+
+    -- Aimbot Camera Lock (Botão Direito do Mouse)
+    if Settings.Aimbot and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local Target = GetClosestPlayerToMouse()
+        if Target then
+            local Smooth = Settings.AimbotSmoothness or 2
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, Target.Position), 1 / Smooth)
+        end
+    end
+
+    -- Hitbox Expander
+    if Settings.HitboxExpander then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character then
+                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.Size = Vector3.new(Settings.HitboxSize or 10, Settings.HitboxSize or 10, Settings.HitboxSize or 10)
+                    hrp.Transparency = 0.7
+                    hrp.CanCollide = false
+                end
+            end
+        end
+    end
+
+    -- Kill Aura
+    if Settings.KillAura and RootPart then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character then
+                local tHrp = p.Character:FindFirstChild("HumanoidRootPart")
+                local tHum = p.Character:FindFirstChildOfClass("Humanoid")
+                if tHrp and tHum and tHum.Health > 0 then
+                    local dist = (RootPart.Position - tHrp.Position).Magnitude
+                    if dist <= (Settings.KillAuraRange or 15) then
+                        local tool = Character and Character:FindFirstChildOfClass("Tool")
+                        if tool then tool:Activate() end
+                    end
+                end
+            end
+        end
+    end
+end)
 
 -- ANIMAÇÃO SPLASH DE CARREGAMENTO (5 SEGUNDOS)
 local function ShowCenterLoadSequence()
@@ -1431,4 +1379,4 @@ Minimize.MouseButton1Click:Connect(function()
 end)
 
 if Settings.AntiVoid then StartAntiVoid() end
-print("Tox v1 Suite Carregada com Sucesso!")
+print("Tox v1 Suite Carregada com Aimbot e Configs!")
