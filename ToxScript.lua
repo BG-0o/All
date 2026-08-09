@@ -1,5 +1,5 @@
 -- ========================================================
--- ToxScript.lua - Módulo para a Aba SCRIPTS
+-- ToxScript.lua - Aba SCRIPTS
 -- ========================================================
 
 local env = getgenv().ToxEnv
@@ -7,42 +7,23 @@ if not env then return end
 
 local ScriptsPage = env.ScriptsPage
 local CreateButton = env.CreateButton
-local CustomNotify = env.CustomNotify
 
-CreateButton("Infinite Yield FE", ScriptsPage, function()
-    CustomNotify("Loading Infinite Yield...", Color3.fromRGB(100, 255, 100))
+CreateButton("Infinite Yield", ScriptsPage, function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 end)
 
-CreateButton("Dark Dex V3", ScriptsPage, function()
-    CustomNotify("Loading Dex Explorer...", Color3.fromRGB(100, 255, 100))
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
+CreateButton("FE Emotes", ScriptsPage, function()
+    loadstring(game:HttpGet(('https://raw.githubusercontent.com/VenezzaX/Useful-things/refs/heads/main/FeEmotes.lua'),true))()
 end)
 
-CreateButton("SimpleSpy V2", ScriptsPage, function()
-    CustomNotify("Loading RemoteSpy...", Color3.fromRGB(100, 255, 100))
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/exserter/SimpleSpyV2/main/SimpleSpy.lua"))()
+CreateButton("Bundle Edit", ScriptsPage, function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/BundleEdit?token=GHSAT0AAAAAAEEZIWW5WJZ2VEJNTVX5JP422TW5S7Q"))()
 end)
 
-CreateButton("Rejoin Server", ScriptsPage, function()
-    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, env.Player)
+CreateButton("Wall Walk", ScriptsPage, function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
 end)
 
-CreateButton("Server Hop", ScriptsPage, function()
-    local Http = game:GetService("HttpService")
-    local TPS = game:GetService("TeleportService")
-    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-    
-    local function ListServers(cursor)
-        local Raw = game:HttpGet(Api .. (cursor and "&cursor=" .. cursor or ""))
-        return Http:JSONDecode(Raw)
-    end
-    
-    local ServerList = ListServers()
-    for _, server in ipairs(ServerList.data) do
-        if server.playing < server.maxPlayers and server.id ~= game.JobId then
-            TPS:TeleportToPlaceInstance(game.PlaceId, server.id)
-            break
-        end
-    end
+CreateButton("PShade", ScriptsPage, function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua'))()
 end)
