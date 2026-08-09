@@ -2,11 +2,11 @@ local E = getgenv().ToxEnv
 local Settings = E.Settings
 local VisualsPage = E.Pages["VISUALS"]
 
-E.CreateToggleWithValue("Enable ESP", VisualsPage, Settings.ESP, Settings.EspSize, function(v) Settings.ESP = v if not v then E.ClearAllESP() end end, function(val) Settings.EspSize = val end)
+E.CreateToggleWithValue("Enable ESP", VisualsPage, Settings.ESP, Settings.EspSize, function(v) Settings.ESP = v if not v and not Settings.Chams then E.ClearAllESP() end end, function(val) Settings.EspSize = val end)
 E.CreateDropdown("ESP Color", {"White", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "Orange", "Purple"}, VisualsPage, Settings.EspColorName, function(v) Settings.EspColorName = v Settings.EspColor = E.ColorMap[v] or Color3.fromRGB(255, 255, 255) E.ClearAllESP() end)
 E.CreateDropdown("Name Display", {"Display", "Username"}, VisualsPage, Settings.NameType, function(v) Settings.NameType = v end)
 E.CreateToggle("Show Health", VisualsPage, Settings.ShowHealth, function(v) Settings.ShowHealth = v end)
-E.CreateToggle("Chams / Highlight", VisualsPage, Settings.Chams, function(v) Settings.Chams = v if not v then E.ClearAllESP() end end)
+E.CreateToggle("Chams / Highlight", VisualsPage, Settings.Chams, function(v) Settings.Chams = v if not v and not Settings.ESP then E.ClearAllESP() end end)
 E.CreateToggle("Use Team Color", VisualsPage, Settings.ShowTeamColor, function(v) Settings.ShowTeamColor = v end)
 E.CreateToggle("Ignore Team", VisualsPage, Settings.DisableTeam, function(v) Settings.DisableTeam = v E.ClearAllESP() end)
 
