@@ -1,31 +1,20 @@
-local Tox = getgenv().Tox
-local Page = Tox.Pages["VISUALS"]
-local Settings = Tox.Settings
-local S = Tox.Services
+local E = getgenv().ToxEnv
+local Settings = E.Settings
+local VisualsPage = E.Pages["VISUALS"]
 
-Tox.UI.CreateToggleWithValue("Enable ESP", Page, Settings.ESP, Settings.EspSize, function(v) Settings.ESP = v end, function(val) Settings.EspSize = val end)
-Tox.UI.CreateDropdown("ESP Color", {"White", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "Orange", "Purple"}, Page, Settings.EspColorName, function(v) 
-    Settings.EspColorName = v 
-    Settings.EspColor = Tox.ColorMap[v] or Color3.fromRGB(255, 255, 255)
-end)
-Tox.UI.CreateDropdown("Name Display", {"Display", "Username"}, Page, Settings.NameType, function(v) Settings.NameType = v end)
-Tox.UI.CreateToggle("Show Health", Page, Settings.ShowHealth, function(v) Settings.ShowHealth = v end)
-Tox.UI.CreateToggle("Chams / Highlight", Page, Settings.Chams, function(v) Settings.Chams = v end)
-Tox.UI.CreateToggle("Use Team Color", Page, Settings.ShowTeamColor, function(v) Settings.ShowTeamColor = v end)
-Tox.UI.CreateToggle("Ignore Team", Page, Settings.DisableTeam, function(v) Settings.DisableTeam = v end)
+E.CreateToggleWithValue("Enable ESP", VisualsPage, Settings.ESP, Settings.EspSize, function(v) Settings.ESP = v if not v then E.ClearAllESP() end end, function(val) Settings.EspSize = val end)
+E.CreateDropdown("ESP Color", {"White", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "Orange", "Purple"}, VisualsPage, Settings.EspColorName, function(v) Settings.EspColorName = v Settings.EspColor = E.ColorMap[v] or Color3.fromRGB(255, 255, 255) E.ClearAllESP() end)
+E.CreateDropdown("Name Display", {"Display", "Username"}, VisualsPage, Settings.NameType, function(v) Settings.NameType = v end)
+E.CreateToggle("Show Health", VisualsPage, Settings.ShowHealth, function(v) Settings.ShowHealth = v end)
+E.CreateToggle("Chams / Highlight", VisualsPage, Settings.Chams, function(v) Settings.Chams = v if not v then E.ClearAllESP() end end)
+E.CreateToggle("Use Team Color", VisualsPage, Settings.ShowTeamColor, function(v) Settings.ShowTeamColor = v end)
+E.CreateToggle("Ignore Team", VisualsPage, Settings.DisableTeam, function(v) Settings.DisableTeam = v E.ClearAllESP() end)
 
-Tox.UI.CreateToggle("Fullbright", Page, Settings.Fullbright, function(v) 
-    Settings.Fullbright = v 
-    if not v then
-        S.Lighting.Ambient = Color3.fromRGB(128, 128, 128)
-        S.Lighting.Brightness = 1
-    end
+E.CreateInputWithToggle("Spectate Player", VisualsPage, "", function(enabled, nick)
+    Settings.Spectating = enabled
+    if enabled then E.StartSpectate(nick) else E.StopSpectate() end
 end)
 
-S.RunService.RenderStepped:Connect(function()
-    if Tox.Destroyed then return end
-    if Settings.Fullbright then
-        S.Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        S.Lighting.Brightness = 2
-    end
-end)
+E.CreateToggle("Freecam", VisualsPage, false, function(v) E.ToggleFreecam(v) end)
+E.CreateToggleWithValue("FOV Editor", VisualsPage, false, 70, function(v) Settings.FOVEnabled = v if not v then workspace.CurrentCamera.FieldOfView = 70 end end, function(val) Settings.FOVValue = val if Settings.FOVEnabled then workspace.CurrentCamera.FieldOfView = val end end)
+E.CreateToggle("Fullbright", VisualsPage, false, function(v) E.ToggleFullbright(v) end)
