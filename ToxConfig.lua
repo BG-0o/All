@@ -1,29 +1,33 @@
-local E = getgenv().ToxEnv
-local Settings = E.Settings
-local ConfigPage = E.Pages["CONFIG"]
+-- ========================================================
+-- ToxConfig.lua - Módulo para a Aba CONFIG
+-- ========================================================
 
-E.CreateToggle("Anti AFK", ConfigPage, Settings.AntiAFK, function(v) Settings.AntiAFK = v if v then E.StartAntiAFK() else E.StopAntiAFK() end end)
-E.CreateToggle("Chat Logs", ConfigPage, Settings.ChatLogs, function(v) 
-    Settings.ChatLogs = v 
-    E.ChatLogGui.Visible = v
-    if v then E.StartChatLogs() else E.StopChatLogs() end 
-end)
-E.CreateToggle("3D Rendering", ConfigPage, Settings.Render3D, function(v) E.Toggle3DRendering(v) end)
-E.CreateKeybind("GUI Keybind", ConfigPage, Settings.GUIKeybind, function(key) Settings.GUIKeybind = key end)
+local env = getgenv().ToxEnv
+if not env then return end
 
-E.CreateButton("Rejoin", ConfigPage, function()
-	E.ApplyTeleportQueue()
-	if #E.Players:GetPlayers() <= 1 then
-		E.TeleportService:Teleport(game.PlaceId, E.Player)
-	else
-		E.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, E.Player)
-	end
+local ConfigPage = env.ConfigPage
+local Settings = env.Settings
+
+local CreateKeybind = env.CreateKeybind
+local CreateButton = env.CreateButton
+local CustomNotify = env.CustomNotify
+
+CreateKeybind("Menu Open Keybind", ConfigPage, Settings.GUIKeybind, function(key)
+    Settings.GUIKeybind = key
+    CustomNotify("GUI Keybind updated!", Color3.fromRGB(100, 255, 100))
 end)
 
-E.CreateButton("DESTROY", ConfigPage, function()
-	E.StopFly() E.StopFlyCar() E.StopFloat() E.DisableNoclip() E.StopAntiFling() E.StopAntiAFK() E.StopAntiVoid() E.StopNoFall() E.ClearAllESP() E.StopSpectate() E.StopLoopTP() E.StopChatLogs() E.ToggleFullbright(false) E.ToggleFreecam(false) E.Toggle3DRendering(true)
-	if E.CustomSound then E.CustomSound:Stop() E.CustomSound:Destroy() end
-    if E.Humanoid then E.Humanoid.WalkSpeed = 16 E.Humanoid.JumpPower = 50 end
-    E.NotifGui:Destroy()
-	E.Gui:Destroy()
+CreateButton("Save Settings", ConfigPage, function()
+    if env.AutoSaveConfiguration then
+        env.AutoSaveConfiguration()
+        CustomNotify("Configuration Saved!", Color3.fromRGB(100, 255, 100))
+    end
+end)
+
+CreateButton("Unload Script", ConfigPage, function()
+    env.Destroyed = true
+    if env.ClearAllESP then env.ClearAllESP() end
+    if env.Gui then env.Gui:Destroy() end
+    if env.NotifGui then env.NotifGui:Destroy() end
+    CustomNotify("Tox Script Unloaded!", Color3.fromRGB(255, 100, 100))
 end)
