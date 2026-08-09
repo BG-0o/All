@@ -30,6 +30,41 @@ local function StartAntiAFK()
 	end)
 end
 
+-- CHAT LOGS LISTENER
+local chatLogConns = {}
+local function StartChatLogs()
+    for _, conn in ipairs(chatLogConns) do pcall(function() conn:Disconnect() end) end
+    table.clear(chatLogConns)
+
+    local function HookPlayer(p)
+        if p == LocalPlayer then return end
+        local conn = p.Chatted:Connect(function(msg)
+            if env.AddChatLog then env.AddChatLog(p, msg) end
+        end)
+        table.insert(chatLogConns, conn)
+    end
+
+    for _, p in ipairs(Players:GetPlayers()) do HookPlayer(p) end
+    local pConn = Players.PlayerAdded:Connect(HookPlayer)
+    table.insert(chatLogConns, pConn)
+
+    pcall(function()
+        local TextChatService = game:GetService("TextChatService")
+        if TextChatService then
+            local tcConn = TextChatService.MessageReceived:Connect(function(textChatMessage)
+                if not Settings.ChatLogs or env.Destroyed then return end
+                if textChatMessage.TextSource then
+                    local senderPlayer = Players:GetPlayerByUserId(textChatMessage.TextSource.UserId)
+                    if senderPlayer and senderPlayer ~= LocalPlayer then
+                        if env.AddChatLog then env.AddChatLog(senderPlayer, textChatMessage.Text) end
+                    end
+                end
+            end)
+            table.insert(chatLogConns, tcConn)
+        end
+    end)
+end
+
 -- 3D RENDERING
 local function Toggle3DRendering(v)
 	Settings.Render3D = v
@@ -59,7 +94,7 @@ local function ApplyTeleportQueue()
 	end
 end
 
--- CONSTRUÇÃO DOS ELEMENTOS DA ABA CONFIG (EXATAMENTE COMO NO SEU SCRIPT ANTIGO)
+-- BOTÕES DA ABA CONFIG
 CreateToggle("Anti AFK", ConfigPage, Settings.AntiAFK, function(v)
     Settings.AntiAFK = v
     if v then StartAntiAFK() end
@@ -68,6 +103,7 @@ end)
 CreateToggle("Chat Logs", ConfigPage, Settings.ChatLogs, function(v) 
     Settings.ChatLogs = v 
     if env.ChatLogGui then env.ChatLogGui.Visible = v end
+    if v then StartChatLogs() end
 end)
 
 CreateToggle("3D Rendering", ConfigPage, Settings.Render3D, function(v)
@@ -88,10 +124,8 @@ CreateButton("Rejoin", ConfigPage, function()
 end)
 
 CreateButton("DESTROY", ConfigPage, function()
-	env.Destroyed = true
-	Toggle3DRendering(true)
-    if env.Gui then env.Gui:Destroy() end
-    if env.NotifGui then env.NotifGui:Destroy() end
+    if env.UnloadScript then env.UnloadScript() end
 end)
 
 if Settings.AntiAFK then StartAntiAFK() end
+if Settings.ChatLogs then StartChatLogs() end
