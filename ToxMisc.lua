@@ -1,4 +1,4 @@
--- ToxMisc.lua (Módulo Diversos)
+-- ToxMisc.lua
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
@@ -46,7 +46,7 @@ function ToxMisc:Init(parentFrame, hub)
     rejBtn.Size = UDim2.new(1, -10, 0, 32)
     rejBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     rejBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    rejBtn.Text = "Reentrarm no Servidor (Rejoin)"
+    rejBtn.Text = "Reentrar no Servidor (Rejoin)"
     rejBtn.Font = Enum.Font.SourceSansBold
     rejBtn.TextSize = 14
     rejBtn.Parent = parentFrame
