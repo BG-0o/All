@@ -1,4 +1,4 @@
--- ToxScript.lua (Módulo Scripts Externos)
+-- ToxScript.lua
 local ToxScript = {}
 
 function ToxScript:Init(parentFrame, hub)
