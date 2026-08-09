@@ -13,68 +13,34 @@ local CreateInputWithButton = env.CreateInputWithButton
 local CreateButton = env.CreateButton
 
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = env.Player
 
--- FLING LOGIC
-local function SkidFling(TargetPlayer)
-	if not TargetPlayer or not TargetPlayer.Character then return end
+-- CTRL + CLICK TELEPORT CORRIGIDO
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or env.Destroyed or not Settings.CtrlClickTP then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
+            local mouse = LocalPlayer:GetMouse()
+            local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if mouse and mouse.Hit and root then
+                root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end
+end)
 
-	local Character = LocalPlayer.Character
-	local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-	local RootPart = Humanoid and Humanoid.RootPart or Character:FindFirstChild("HumanoidRootPart")
-
-	local TCharacter = TargetPlayer.Character
-	local THumanoid = TCharacter and TCharacter:FindFirstChildOfClass("Humanoid")
-	local TRootPart = THumanoid and THumanoid.RootPart or TCharacter:FindFirstChild("HumanoidRootPart")
-
-	if Character and Humanoid and RootPart and TRootPart then
-		pcall(function() Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false) end)
-		local OldPos = RootPart.CFrame
-
-		local BV = Instance.new("BodyVelocity")
-		BV.Name = "ToxFlingVel"
-		BV.Parent = RootPart
-		BV.Velocity = Vector3.new(9e6, 9e6, 9e6)
-		BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
-
-		local Time = tick()
-		repeat
-			if RootPart and TRootPart and Humanoid.Health > 0 then
-				RootPart.CFrame = TRootPart.CFrame * CFrame.new(0, 0, 0)
-				RootPart.Velocity = Vector3.new(9e6, 9e6 * 5, 9e6)
-				RootPart.RotVelocity = Vector3.new(9e7, 9e7, 9e7)
-			end
-			task.wait()
-		until not TRootPart or TRootPart.Velocity.Magnitude > 500 or tick() > Time + 2
-
-		BV:Destroy()
-		RootPart.CFrame = OldPos
-		RootPart.Velocity = Vector3.zero
-		RootPart.RotVelocity = Vector3.zero
-	end
-end
-
+-- FLING ALL USANDO A SUA URL DO GITHUB
 local function ExecuteFling(TargetInput)
-	if not TargetInput or TargetInput == "" then
-		if env.Message then env.Message("Fling Error", "Please enter a target name or 'all'", 3) end
-		return
-	end
-
-	local query = TargetInput:lower()
-	if query == "all" or query == "others" then
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer then SkidFling(p) end
-		end
+	if TargetInput and TargetInput:lower() == "all" then
+		pcall(function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/FlingAll.lua"))()
+		end)
 	else
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer then
-				if p.Name:lower():sub(1, #query) == query or p.DisplayName:lower():sub(1, #query) == query then
-					SkidFling(p)
-					break
-				end
-			end
-		end
+		pcall(function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/FlingAll.lua"))()
+		end)
 	end
 end
 
@@ -145,7 +111,7 @@ local function StartAntiFling()
 	end)
 end
 
--- CONSTRUÇÃO DOS ELEMENTOS DA ABA MISC (EXATAMENTE COMO NO SEU SCRIPT ANTIGO)
+-- BOTÕES DA ABA MISC
 CreateToggle("Ctrl Click TP", FlingPage, Settings.CtrlClickTP, function(v) Settings.CtrlClickTP = v end)
 
 CreateToggle("No Fall Damage", FlingPage, Settings.NoFallDamage, function(v)
