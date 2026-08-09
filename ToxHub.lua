@@ -308,14 +308,8 @@ Main.ClipsDescendants = true
 Main.Visible = false
 Main.Parent = Gui
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
-MainCorner.Parent = Main
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = MAIN_COLOR
-MainStroke.Thickness = 2
-MainStroke.Parent = Main
+local MainCorner = Instance.new("UICorner") MainCorner.CornerRadius = UDim.new(0, 8) MainCorner.Parent = Main
+local MainStroke = Instance.new("UIStroke") MainStroke.Color = MAIN_COLOR MainStroke.Thickness = 2 MainStroke.Parent = Main
 
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 38)
@@ -385,9 +379,7 @@ Minimize.TextSize = 18
 Minimize.Font = Enum.Font.GothamBold
 Minimize.Parent = TopBar
 
-local MinimizeCorner = Instance.new("UICorner")
-MinimizeCorner.CornerRadius = UDim.new(0, 4)
-MinimizeCorner.Parent = Minimize
+local MinimizeCorner = Instance.new("UICorner") MinimizeCorner.CornerRadius = UDim.new(0, 4) MinimizeCorner.Parent = Minimize
 
 local Tabs = Instance.new("ScrollingFrame")
 Tabs.Size = UDim2.new(1, -10, 0, 34)
@@ -470,9 +462,7 @@ local function CreateTab(Name, Page)
 	Button.AutoButtonColor = false
 	Button.Parent = Tabs
 
-	local Corner = Instance.new("UICorner")
-	Corner.CornerRadius = UDim.new(0, 4)
-	Corner.Parent = Button
+	local Corner = Instance.new("UICorner") Corner.CornerRadius = UDim.new(0, 4) Corner.Parent = Button
 
 	Button.MouseButton1Click:Connect(function()
 		if Destroyed then return end
@@ -1246,7 +1236,7 @@ local function CreateInputWithToggle(Name, Page, DefaultText, CallbackToggle)
 	Container.Size = UDim2.new(1, -5, 0, 48)
 	Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 	Container.BorderSizePixel = 0
-	Container.Parent = Page
+	Container.Parent = Container
 
 	local ContainerCorner = Instance.new("UICorner")
 	ContainerCorner.CornerRadius = UDim.new(0, 4)
@@ -1769,7 +1759,7 @@ local function ExecuteFling(TargetInput)
 	end
 end
 
--- WALK FLING SYSTEM (SEM GIRAR E SEM FLUTUAR)
+-- WALK FLING SYSTEM
 local WalkFlingConnection
 local function StopWalkFling()
 	if WalkFlingConnection then
@@ -2330,6 +2320,32 @@ end
 
 Players.PlayerRemoving:Connect(RemoveESP)
 
+-- FUNÇÃO DE DESTRUIÇÃO / UNLOAD TOTAL DO SCRIPT
+local function UnloadScript()
+    Destroyed = true
+    if getgenv().ToxEnv then getgenv().ToxEnv.Destroyed = true end
+    
+    ClearAllESP()
+    pcall(function() ESPFolder:Destroy() end)
+    pcall(function() Gui:Destroy() end)
+    pcall(function() NotifGui:Destroy() end)
+    
+    StopWalkFling()
+    StopAntiFling()
+    StopAntiVoid()
+    StopNoFall()
+    StopAntiAFK()
+    StopChatLogs()
+    StopFly()
+    StopFlyCar()
+    StopSpectate()
+    StopLoopTP()
+    StopFloat()
+    
+    ToggleFullbright(false)
+    ToggleFreecam(false)
+end
+
 local function ApplyTeleportQueue()
 	local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (Fluxus and Fluxus.queue_on_teleport) or (http and http.queue_on_teleport)
 	if queueteleport then
@@ -2384,13 +2400,13 @@ getgenv().ToxEnv = {
     StartLoopTP = StartLoopTP, StopLoopTP = StopLoopTP, TeleportToPlayer = TeleportToPlayer,
     StopFloat = StopFloat, ToggleFreecam = ToggleFreecam, ToggleFullbright = ToggleFullbright,
     Toggle3DRendering = Toggle3DRendering, ClearAllESP = ClearAllESP, ExecuteFling = ExecuteFling,
-    ApplyTeleportQueue = ApplyTeleportQueue,
+    ApplyTeleportQueue = ApplyTeleportQueue, UnloadScript = UnloadScript,
     MusicGui = MusicGui, ChatLogGui = ChatLogGui, NotifGui = NotifGui, Gui = Gui,
     Player = Player, Humanoid = Humanoid, Destroyed = Destroyed, CustomSound = CustomSound,
     Players = Players, TeleportService = TeleportService, UpdateMovement = UpdateMovement
 }
 
--- ANIMACAO DE CARREGAMENTO (AS OPÇÕES E MODULOS SÓ CARREGAM APÓS A BARRA TERMINAR)
+-- ANIMACAO DE CARREGAMENTO
 local function ShowCenterLoadSequence()
     local SplashFrame = Instance.new("Frame")
     SplashFrame.Size = UDim2.new(0, 320, 0, 95)
@@ -2508,15 +2524,14 @@ local function ShowCenterLoadSequence()
                 true
             )
 
-            -- MARCAR COMO CARREGADO
             IsLoaded = true
 
-            -- CARREGAMENTO DOS SCRIPTS E ATIVAÇÕES SOMENTE APÓS A GUI APARECER
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer.lua"))()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals.lua"))()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat.lua"))()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript.lua"))()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
+            -- CARREGAMENTO DOS MODULOS
+            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxPlayer.lua"))() end)
+            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals.lua"))() end)
+            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxCombat.lua"))() end)
+            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript.lua"))() end)
+            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))() end)
 
             if Settings.AntiFling then StartAntiFling() end
             if Settings.WalkFling then StartWalkFling() end
@@ -2541,11 +2556,14 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 RunService.RenderStepped:Connect(function()
-	if Destroyed then return end
+	if Destroyed then 
+		ClearAllESP()
+		return 
+	end
 	UpdateMovement()
     UpdateFreecam()
 	if Settings.Float then UpdateFloat() end
-	if Settings.ESP or Settings.Chams then UpdateESP() end
+	if Settings.ESP or Settings.Chams then UpdateESP() else ClearAllESP() end
     if Settings.FOVEnabled then workspace.CurrentCamera.FieldOfView = Settings.FOVValue end
 end)
 
@@ -2553,7 +2571,7 @@ end)
 Player.CharacterAdded:Connect(function()
 	task.wait(0.5)
 	UpdateCharacter()
-	if not IsLoaded then return end
+	if not IsLoaded or Destroyed then return end
 
 	if Settings.Speed or Settings.Jump then UpdateMovement() end
 	if Settings.Fly then StartFly() end
