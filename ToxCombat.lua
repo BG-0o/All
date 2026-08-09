@@ -1,277 +1,122 @@
--- ========================================================
--- ToxCombat.lua - Aba COMBAT
--- ========================================================
-
-local env = getgenv().ToxEnv
-if not env then return end
-
-local CombatPage = env.CombatPage
-local Settings = env.Settings
-local ColorMap = env.ColorMap
-
-local CreateToggle = env.CreateToggle
-local CreateToggleWithValue = env.CreateToggleWithValue
-local CreateDropdown = env.CreateDropdown
-local CreateKeybind = env.CreateKeybind
-local CreateInputWithToggle = env.CreateInputWithToggle
-
+-- ToxCombat.lua (Módulo Combate com Fling para ALL, Random e Nicks)
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local GuiService = game:GetService("GuiService")
+local LocalPlayer = Players.LocalPlayer
 
-local LocalPlayer = env.Player or Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
 
-Settings.Combat = Settings.Combat or {
-    Aimbot = false,
-    UseLeftClick = true,
-    UseCustomKey = false,
-    UseGuiInset = true,
-    AimKey = Enum.KeyCode.E,
-    AimPart = "Head",
-    AimType = "Camera",
-    IgnoreFriends = false,
-    PredictMovement = false,
-    TeamCheck = false,
-    WallCheck = false,
-    Blatant = false,
-    Sensitivity = 8,
-    AimRange = 500,
-    XOffset = 0,
-    YOffset = 0,
-    AimTargets = "Players Only",
-    LockRadius = 110,
-    FOVCircle = false,
-    CircleColor = "Purple",
-    TriggerBot = false,
-    TriggerSpeed = 5,
-    AimLock = false,
-    AimLockTarget = ""
+local ToxCombat = {
+    IsFlinging = false
 }
 
-local Combat = Settings.Combat
+-- FIX: Reconhecimento Universal de Alvos (ALL, RANDOM, OTHERS, USERNAME, DISPLAYNAME)
+function ToxCombat:GetTargets(str)
+    if not str or str == "" then return {} end
+    str = string.lower(str):match("^%s*(.-)%s*$")
+    local targets = {}
 
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 1.5
-FOVCircle.NumSides = 60
-FOVCircle.Filled = false
-FOVCircle.Transparency = 1
-FOVCircle.Visible = false
-
-RunService.RenderStepped:Connect(function()
-    if env.Destroyed then
-        FOVCircle.Visible = false
-        pcall(function() FOVCircle:Remove() end)
-        return
-    end
-
-    if Combat.FOVCircle then
-        FOVCircle.Visible = true
-        FOVCircle.Radius = Combat.LockRadius
-        FOVCircle.Color = ColorMap[Combat.CircleColor] or Color3.fromRGB(150, 50, 255)
-        
-        local mousePos = UserInputService:GetMouseLocation()
-        if not Combat.UseGuiInset then
-            local inset = GuiService:GetGuiInset()
-            mousePos = Vector2.new(mousePos.X, mousePos.Y - inset.Y)
+    if str == "all" or str == "others" then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then table.insert(targets, p) end
         end
-        FOVCircle.Position = mousePos
+    elseif str == "random" then
+        local plrs = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then table.insert(plrs, p) end
+        end
+        if #plrs > 0 then
+            table.insert(targets, plrs[math.random(1, #plrs)])
+        end
     else
-        FOVCircle.Visible = false
-    end
-end)
-
-local function GetTargetPartFromModel(model, partName)
-    if not model then return nil end
-    if partName == "Torso" then
-        return model:FindFirstChild("Torso") 
-            or model:FindFirstChild("UpperTorso") 
-            or model:FindFirstChild("LowerTorso") 
-            or model:FindFirstChild("HumanoidRootPart")
-    elseif partName == "Head" then
-        return model:FindFirstChild("Head")
-    elseif partName == "HumanoidRootPart" then
-        return model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso")
-    end
-    return model:FindFirstChild(partName)
-end
-
-local function IsPartVisible(targetPart)
-    local origin = Camera.CFrame.Position
-    local direction = targetPart.Position - origin
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = RaycastFilterType.Exclude
-    
-    local ignoreList = {Camera}
-    if LocalPlayer.Character then table.insert(ignoreList, LocalPlayer.Character) end
-    raycastParams.FilterDescendantsInstances = ignoreList
-
-    local result = workspace:Raycast(origin, direction, raycastParams)
-    return result == nil or result.Instance:IsDescendantOf(targetPart.Parent)
-end
-
-local function GetAimLockTargetPart()
-    if not Combat.AimLock or Combat.AimLockTarget == "" then return nil end
-    local query = Combat.AimLockTarget:lower()
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local pName = player.Name:lower()
-            local dName = player.DisplayName:lower()
-            if pName:sub(1, #query) == query or dName:sub(1, #query) == query or pName:find(query, 1, true) or dName:find(query, 1, true) then
-                return GetTargetPartFromModel(player.Character, Combat.AimPart)
-            end
-        end
-    end
-    return nil
-end
-
-local function GetClosestTarget()
-    local lockPart = GetAimLockTargetPart()
-    if lockPart then return lockPart end
-
-    local closestTarget = nil
-    local shortestDistance = Combat.LockRadius
-    local mousePos = UserInputService:GetMouseLocation()
-    local targetsToProcess = {}
-
-    if Combat.AimTargets == "Players Only" or Combat.AimTargets == "All" then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                if Combat.TeamCheck and player.Team == LocalPlayer.Team then continue end
-                if Combat.IgnoreFriends and LocalPlayer:IsFriendsWith(player.UserId) then continue end
-                table.insert(targetsToProcess, player.Character)
-            end
-        end
-    end
-
-    if Combat.AimTargets == "NPCs" or Combat.AimTargets == "All" then
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("Humanoid") and obj.Parent and obj.Health > 0 then
-                local model = obj.Parent
-                if model:IsA("Model") and not Players:GetPlayerFromCharacter(model) and model ~= LocalPlayer.Character then
-                    table.insert(targetsToProcess, model)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                local uName = string.lower(p.Name)
+                local dName = string.lower(p.DisplayName)
+                if string.find(uName, str) or string.find(dName, str) then
+                    table.insert(targets, p)
                 end
             end
         end
     end
-
-    for _, model in ipairs(targetsToProcess) do
-        local targetPart = GetTargetPartFromModel(model, Combat.AimPart)
-        if targetPart then
-            local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-            if onScreen then
-                local worldDist = (targetPart.Position - Camera.CFrame.Position).Magnitude
-                if worldDist <= Combat.AimRange then
-                    if not Combat.WallCheck or IsPartVisible(targetPart) then
-                        local distToMouse = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
-                        if distToMouse < shortestDistance then
-                            shortestDistance = distToMouse
-                            closestTarget = targetPart
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return closestTarget
+    return targets
 end
 
-local isLeftClicking = false
-local isCustomKeyHolding = false
+-- FIX: Fling Físico com Suporte a Lista de Alvos
+function ToxCombat:Fling(targetString)
+    local targets = self:GetTargets(targetString)
+    if #targets == 0 then return end
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed or env.Destroyed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then isLeftClicking = true end
-    if Combat.AimKey and (input.KeyCode == Combat.AimKey or input.UserInputType == Combat.AimKey) then isCustomKeyHolding = true end
-end)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then isLeftClicking = false end
-    if Combat.AimKey and (input.KeyCode == Combat.AimKey or input.UserInputType == Combat.AimKey) then isCustomKeyHolding = false end
-end)
+    local oldPos = hrp.CFrame
+    self.IsFlinging = true
 
-local function ShouldAim()
-    if not Combat.Aimbot then return false end
-    if Combat.UseLeftClick and not isLeftClicking then return false end
-    if Combat.UseCustomKey and not isCustomKeyHolding then return false end
-    return true
+    local bav = Instance.new("BodyAngularVelocity")
+    bav.Name = "ToxSpin"
+    bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bav.AngularVelocity = Vector3.new(0, 999999, 0)
+    bav.Parent = hrp
+
+    for _, target in ipairs(targets) do
+        if not self.IsFlinging then break end
+        local tChar = target.Character
+        local tHrp = tChar and tChar:FindFirstChild("HumanoidRootPart")
+
+        if tHrp then
+            local start = tick()
+            while tick() - start < 1.2 and self.IsFlinging do
+                if not tHrp or not hrp then break end
+                hrp.CFrame = tHrp.CFrame * CFrame.Angles(math.rad(math.random(-180,180)), math.rad(math.random(-180,180)), 0)
+                hrp.AssemblyLinearVelocity = Vector3.new(99999, 99999, 99999)
+                RunService.Heartbeat:Wait()
+            end
+        end
+    end
+
+    bav:Destroy()
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+    hrp.CFrame = oldPos
+    self.IsFlinging = false
 end
 
-RunService.RenderStepped:Connect(function()
-    if env.Destroyed then return end
+function ToxCombat:Init(parentFrame, hub)
+    local targetBox = Instance.new("TextBox")
+    targetBox.Size = UDim2.new(1, -10, 0, 30)
+    targetBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    targetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    targetBox.PlaceholderText = "Target: ALL / RANDOM / Nick / Display"
+    targetBox.Text = ToxConfig:Get("Combat", "Target", "all")
+    targetBox.Font = Enum.Font.SourceSans
+    targetBox.TextSize = 14
+    targetBox.Parent = parentFrame
 
-    if ShouldAim() then
-        local targetPart = GetClosestTarget()
-        if targetPart then
-            local targetPos = targetPart.Position
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 4)
+    boxCorner.Parent = targetBox
 
-            if Combat.PredictMovement and targetPart.Parent:FindFirstChild("HumanoidRootPart") then
-                local vel = targetPart.Parent.HumanoidRootPart.AssemblyLinearVelocity
-                targetPos = targetPos + (vel * 0.05)
-            end
+    targetBox.FocusLost:Connect(function()
+        ToxConfig:Set("Combat", "Target", targetBox.Text)
+    end)
 
-            targetPos = targetPos + Vector3.new(Combat.XOffset, Combat.YOffset, 0)
+    local flingBtn = Instance.new("TextButton")
+    flingBtn.Size = UDim2.new(1, -10, 0, 32)
+    flingBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+    flingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    flingBtn.Text = "Executar Fling"
+    flingBtn.Font = Enum.Font.SourceSansBold
+    flingBtn.TextSize = 14
+    flingBtn.Parent = parentFrame
 
-            if Combat.AimType == "Camera" then
-                if Combat.Blatant then
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
-                else
-                    local alpha = math.clamp((11 - Combat.Sensitivity) * 0.05, 0.01, 1)
-                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), alpha)
-                end
-            end
-        end
-    end
+    local flingCorner = Instance.new("UICorner")
+    flingCorner.CornerRadius = UDim.new(0, 4)
+    flingCorner.Parent = flingBtn
 
-    if Combat.TriggerBot then
-        local mouse = LocalPlayer:GetMouse()
-        if mouse.Target and mouse.Target.Parent and mouse.Target.Parent:FindFirstChildOfClass("Humanoid") then
-            local targetChar = mouse.Target.Parent
-            local targetPlayer = Players:GetPlayerFromCharacter(targetChar)
-            if targetPlayer and targetPlayer ~= LocalPlayer then
-                if not (Combat.TeamCheck and targetPlayer.Team == LocalPlayer.Team) then
-                    if mouse1click then
-                        mouse1click()
-                        task.wait(1 / math.max(Combat.TriggerSpeed, 1))
-                    end
-                end
-            end
-        end
-    end
-end)
+    flingBtn.MouseButton1Click:Connect(function()
+        self:Fling(targetBox.Text)
+    end)
+end
 
-CreateToggle("Aimbot", CombatPage, Combat.Aimbot, function(v) Combat.Aimbot = v end)
-CreateToggle("Use Left Click", CombatPage, Combat.UseLeftClick, function(v) Combat.UseLeftClick = v end)
-CreateToggle("Use Custom Key", CombatPage, Combat.UseCustomKey, function(v) Combat.UseCustomKey = v end)
-CreateToggle("Use Gui Inset", CombatPage, Combat.UseGuiInset, function(v) Combat.UseGuiInset = v end)
-
-CreateKeybind("Aim Key", CombatPage, Combat.AimKey, function(k) Combat.AimKey = k end)
-CreateDropdown("Aim Part", {"Head", "HumanoidRootPart", "Torso"}, CombatPage, Combat.AimPart, function(v) Combat.AimPart = v end)
-CreateDropdown("Aim Type", {"Camera", "Mouse"}, CombatPage, Combat.AimType, function(v) Combat.AimType = v end)
-
-CreateToggle("Ignore Friends", CombatPage, Combat.IgnoreFriends, function(v) Combat.IgnoreFriends = v end)
-CreateToggle("Predict Movement", CombatPage, Combat.PredictMovement, function(v) Combat.PredictMovement = v end)
-CreateToggle("Team Check", CombatPage, Combat.TeamCheck, function(v) Combat.TeamCheck = v end)
-CreateToggle("Wall Check", CombatPage, Combat.WallCheck, function(v) Combat.WallCheck = v end)
-CreateToggle("Blatant", CombatPage, Combat.Blatant, function(v) Combat.Blatant = v end)
-
-CreateToggleWithValue("Sensitivity", CombatPage, false, Combat.Sensitivity, function() end, function(v) Combat.Sensitivity = v end)
-CreateToggleWithValue("Aim Range", CombatPage, false, Combat.AimRange, function() end, function(v) Combat.AimRange = v end)
-CreateToggleWithValue("X Offset", CombatPage, false, Combat.XOffset, function() end, function(v) Combat.XOffset = v end)
-CreateToggleWithValue("Y Offset", CombatPage, false, Combat.YOffset, function() end, function(v) Combat.YOffset = v end)
-
-CreateDropdown("Aim Targets", {"Players Only", "NPCs", "All"}, CombatPage, Combat.AimTargets, function(v) Combat.AimTargets = v end)
-CreateToggleWithValue("Lock Radius", CombatPage, false, Combat.LockRadius, function() end, function(v) Combat.LockRadius = v end)
-
-CreateToggle("FOV Circle", CombatPage, Combat.FOVCircle, function(v) Combat.FOVCircle = v end)
-CreateDropdown("Circle Color", {"Purple", "White", "Red", "Green", "Blue", "Yellow", "Cyan"}, CombatPage, Combat.CircleColor, function(v) Combat.CircleColor = v end)
-
-CreateToggleWithValue("Trigger Bot", CombatPage, Combat.TriggerBot, Combat.TriggerSpeed, function(v) Combat.TriggerBot = v end, function(v) Combat.TriggerSpeed = v end)
-
-CreateInputWithToggle("Aim Lock", CombatPage, Combat.AimLockTarget, function(v, txt)
-    Combat.AimLock = v
-    Combat.AimLockTarget = txt
-end)
+return ToxCombat
