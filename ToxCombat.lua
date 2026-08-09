@@ -1,5 +1,5 @@
 -- ========================================================
--- ToxCombat.lua - Módulo para a Aba COMBAT
+-- ToxCombat.lua - Aba COMBAT
 -- ========================================================
 
 local env = getgenv().ToxEnv
@@ -53,7 +53,6 @@ Settings.Combat = Settings.Combat or {
 local Combat = Settings.Combat
 local Connections = {}
 
--- CÍRCULO DE FOV
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1.5
 FOVCircle.NumSides = 60
@@ -85,7 +84,6 @@ local fovConn = RunService.RenderStepped:Connect(function()
 end)
 table.insert(Connections, fovConn)
 
--- SUPORTE A R6 E R15
 local function GetTargetPartFromModel(model, partName)
     if not model then return nil end
     if partName == "Torso" then
@@ -115,7 +113,6 @@ local function IsPartVisible(targetPart)
     return result == nil or result.Instance:IsDescendantOf(targetPart.Parent)
 end
 
--- AIM LOCK POR NICK
 local function GetAimLockTargetPart()
     if not Combat.AimLock or Combat.AimLockTarget == "" then return nil end
     local query = Combat.AimLockTarget:lower()
@@ -185,7 +182,6 @@ local function GetClosestTarget()
     return closestTarget
 end
 
--- LÓGICA DE TECLAS E AIMBOT
 local isLeftClicking = false
 local isCustomKeyHolding = false
 
@@ -253,7 +249,6 @@ local aimbotLoop = RunService.RenderStepped:Connect(function()
 end)
 table.insert(Connections, aimbotLoop)
 
--- ELEMENTOS VISUAIS
 CreateToggle("Aimbot", CombatPage, Combat.Aimbot, function(v) Combat.Aimbot = v end)
 CreateToggle("Use Left Click", CombatPage, Combat.UseLeftClick, function(v) Combat.UseLeftClick = v end)
 CreateToggle("Use Custom Key", CombatPage, Combat.UseCustomKey, function(v) Combat.UseCustomKey = v end)
