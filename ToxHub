@@ -48,6 +48,20 @@ Tox.Player = Player
 Tox.MAIN_COLOR = Color3.fromRGB(9, 0, 136)
 Tox.LOGO_ID = "rbxassetid://120675082996894"
 
+-- Atualização de Personagem
+function Tox.UpdateCharacter()
+    if Tox.Destroyed then return end
+    Tox.Character = Player.Character or Player.CharacterAdded:Wait()
+    Tox.Humanoid = Tox.Character:WaitForChild("Humanoid")
+    Tox.RootPart = Tox.Character:WaitForChild("HumanoidRootPart")
+end
+Tox.UpdateCharacter()
+
+Player.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    Tox.UpdateCharacter()
+end)
+
 -- Sistema de Configuração Local
 local FolderName = "ToxV1_Data"
 local ConfigFilePath = FolderName .. "/config.json"
@@ -241,7 +255,10 @@ PlayerPage.Visible = true
 PlayerTab.BackgroundColor3 = Tox.MAIN_COLOR
 PlayerTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- Funções Criadoras de Elementos da UI
+-- ========================================================
+-- DECLARAÇÃO COMPLETA DE ELEMENTOS DE UI (Tox.UI)
+-- ========================================================
+
 function Tox.UI.CreateToggle(Name, Page, DefaultValue, Callback)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(1, -5, 0, 39)
@@ -268,14 +285,82 @@ function Tox.UI.CreateToggle(Name, Page, DefaultValue, Callback)
     
     local ToggleCorner = Instance.new("UICorner") ToggleCorner.CornerRadius = UDim.new(0, 4) ToggleCorner.Parent = Toggle
 
+    local Indicator = Instance.new("Frame")
+    Indicator.Size = UDim2.new(0, 14, 0, 14)
+    Indicator.Position = DefaultValue and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+    Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Indicator.Parent = Toggle
+    local IndCorner = Instance.new("UICorner") IndCorner.CornerRadius = UDim.new(0, 3) IndCorner.Parent = Indicator
+
     local Enabled = DefaultValue or false
     Button.MouseButton1Click:Connect(function()
         Enabled = not Enabled
         Toggle.BackgroundColor3 = Enabled and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+        Indicator.Position = Enabled and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
         Callback(Enabled)
         Tox.AutoSaveConfiguration()
     end)
     return Button
+end
+
+function Tox.UI.CreateToggleWithValue(Name, Page, DefaultToggle, DefaultValue, CallbackToggle, CallbackValue)
+    local Container = Instance.new("Frame")
+    Container.Size = UDim2.new(1, -5, 0, 39)
+    Container.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+    Container.Parent = Page
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -125, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Name
+    Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Container
+
+    local Input = Instance.new("TextBox")
+    Input.Size = UDim2.new(0, 55, 0, 25)
+    Input.Position = UDim2.new(1, -112, 0.5, -12)
+    Input.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+    Input.Text = tostring(DefaultValue)
+    Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Input.Font = Enum.Font.Gotham
+    Input.TextSize = 12
+    Input.ClearTextOnFocus = false
+    Input.Parent = Container
+    local InputCorner = Instance.new("UICorner") InputCorner.CornerRadius = UDim.new(0, 4) InputCorner.Parent = Input
+
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Size = UDim2.new(0, 38, 0, 20)
+    ToggleButton.Position = UDim2.new(1, -48, 0.5, -10)
+    ToggleButton.BackgroundColor3 = DefaultToggle and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+    ToggleButton.Text = ""
+    ToggleButton.Parent = Container
+    local ToggleCorner = Instance.new("UICorner") ToggleCorner.CornerRadius = UDim.new(0, 4) ToggleCorner.Parent = ToggleButton
+
+    local Indicator = Instance.new("Frame")
+    Indicator.Size = UDim2.new(0, 14, 0, 14)
+    Indicator.Position = DefaultToggle and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+    Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Indicator.Parent = ToggleButton
+    local IndCorner = Instance.new("UICorner") IndCorner.CornerRadius = UDim.new(0, 3) IndCorner.Parent = Indicator
+
+    local Enabled = DefaultToggle or false
+    ToggleButton.MouseButton1Click:Connect(function()
+        Enabled = not Enabled
+        ToggleButton.BackgroundColor3 = Enabled and Color3.fromRGB(50, 180, 70) or Color3.fromRGB(180, 50, 50)
+        Indicator.Position = Enabled and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+        CallbackToggle(Enabled)
+        Tox.AutoSaveConfiguration()
+    end)
+
+    Input.FocusLost:Connect(function()
+        local num = tonumber(Input.Text)
+        if num then CallbackValue(num) Tox.AutoSaveConfiguration() else Input.Text = tostring(DefaultValue) end
+    end)
+    return Container
 end
 
 function Tox.UI.CreateButton(Name, Page, Callback)
@@ -293,6 +378,91 @@ function Tox.UI.CreateButton(Name, Page, Callback)
     return Button
 end
 
+function Tox.UI.CreateDropdown(Name, Options, Page, DefaultOption, Callback)
+    local Box = Instance.new("Frame")
+    Box.Size = UDim2.new(1, -5, 0, 48)
+    Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+    Box.Parent = Page
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -110, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Name
+    Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Box
+
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0, 95, 0, 27)
+    Button.Position = UDim2.new(1, -107, 0.5, -13)
+    Button.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+    Button.Text = DefaultOption
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.Gotham
+    Button.TextSize = 12
+    Button.Parent = Box
+
+    local CurrentIdx = 1
+    for i, opt in ipairs(Options) do if opt == DefaultOption then CurrentIdx = i end end
+
+    Button.MouseButton1Click:Connect(function()
+        CurrentIdx = CurrentIdx + 1
+        if CurrentIdx > #Options then CurrentIdx = 1 end
+        Button.Text = Options[CurrentIdx]
+        Callback(Options[CurrentIdx])
+        Tox.AutoSaveConfiguration()
+    end)
+    return Box
+end
+
+function Tox.UI.CreateKeybind(Name, Page, DefaultKey, Callback)
+    local Box = Instance.new("Frame")
+    Box.Size = UDim2.new(1, -5, 0, 48)
+    Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+    Box.Parent = Page
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -110, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Name
+    Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Box
+
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0, 95, 0, 27)
+    Button.Position = UDim2.new(1, -107, 0.5, -13)
+    Button.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+    Button.Text = DefaultKey and DefaultKey.Name or "None"
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.Gotham
+    Button.TextSize = 12
+    Button.Parent = Box
+
+    local Binding = false
+    Button.MouseButton1Click:Connect(function()
+        Binding = true
+        Button.Text = "Press Key..."
+    end)
+
+    Services.UserInputService.InputBegan:Connect(function(input)
+        if not Binding then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            Binding = false
+            Button.Text = input.KeyCode.Name
+            Callback(input.KeyCode)
+            Tox.AutoSaveConfiguration()
+        end
+    end)
+    return Box
+end
+
 -- ========================================================
 -- CARREGAMENTO DAS ABAS VIA LINKS DIRETOS DO GITHUB
 -- ========================================================
@@ -302,6 +472,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxScript"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig"))()
 
--- Exibir Menu
+-- Exibir Menu Principal
 Main.Visible = true
 Tox.CustomNotify("Tox v1 Carregado com Sucesso!", Color3.fromRGB(100, 255, 100))
