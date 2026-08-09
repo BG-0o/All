@@ -2,106 +2,76 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
+local ToxConfig = loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxVisuals.lua")) or loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/ToxConfig.lua"))()
 
 local ToxVisuals = {
-    ESPEnabled = false,
-    ESPColor = Color3.fromRGB(255, 0, 0)
+    ESPStorage = {}
 }
 
--- Carregar Cor Salva
-local savedColor = ToxConfig:Get("Visuals", "ESPColor", {1, 0, 0})
-ToxVisuals.ESPColor = Color3.new(savedColor[1], savedColor[2], savedColor[3])
-
-function ToxVisuals:SetESPColor(color3)
-    self.ESPColor = color3
-    ToxConfig:Set("Visuals", "ESPColor", {color3.R, color3.G, color3.B})
-    self:ApplyESP()
+function ToxVisuals:UpdateESP()
+	if not ToxConfig.Settings.ESP then return end
+	for _, targetPlayer in ipairs(Players:GetPlayers()) do
+		if targetPlayer ~= LocalPlayer and targetPlayer.Character then
+			local char = targetPlayer.Character
+			local hl = char:FindFirstChild("ToxESP") or Instance.new("Highlight")
+			hl.Name = "ToxESP"
+			hl.FillColor = ToxConfig.Settings.EspColor
+			hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+			hl.FillTransparency = 0.5
+			hl.Adornee = char
+			hl.Parent = char
+		end
+	end
 end
 
-function ToxVisuals:ToggleESP(state)
-    self.ESPEnabled = state
-    ToxConfig:Set("Visuals", "ESP", state)
-    if not state then
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("ToxESP") then
-                p.Character.ToxESP:Destroy()
-            end
-        end
-    else
-        self:ApplyESP()
-    end
-end
+function ToxVisuals:Init(parentPage, hub)
+    local function CreateDropdown(Name, Options, Page, DefaultOption, Callback)
+        local Box = Instance.new("Frame")
+        Box.Size = UDim2.new(1, -5, 0, 48)
+        Box.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+        Box.BorderSizePixel = 0
+        Box.Parent = Page
 
-function ToxVisuals:ApplyESP()
-    if not self.ESPEnabled then return end
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            local hl = p.Character:FindFirstChild("ToxESP") or Instance.new("Highlight")
-            hl.Name = "ToxESP"
-            hl.FillColor = self.ESPColor
-            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-            hl.FillTransparency = 0.5
-            hl.Adornee = p.Character
-            hl.Parent = p.Character
-        end
-    end
-end
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(1, -110, 1, 0)
+        Label.Position = UDim2.new(0, 12, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Text = Name
+        Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+        Label.TextSize = 13
+        Label.Font = Enum.Font.GothamMedium
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Parent = Box
 
-function ToxVisuals:Init(parentFrame, hub)
-    local espBtn = Instance.new("TextButton")
-    espBtn.Size = UDim2.new(1, -10, 0, 32)
-    espBtn.BackgroundColor3 = ToxConfig:Get("Visuals", "ESP", false) and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(40, 40, 40)
-    espBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    espBtn.Text = "ESP Highlight: " .. (ToxConfig:Get("Visuals", "ESP", false) and "ON" or "OFF")
-    espBtn.Font = Enum.Font.SourceSansBold
-    espBtn.TextSize = 14
-    espBtn.Parent = parentFrame
+        local Button = Instance.new("TextButton")
+        Button.Size = UDim2.new(0, 95, 0, 27)
+        Button.Position = UDim2.new(1, -107, 0.5, -13)
+        Button.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+        Button.BorderSizePixel = 0
+        Button.Text = DefaultOption
+        Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Button.TextSize = 12
+        Button.Font = Enum.Font.Gotham
+        Button.Parent = Box
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = espBtn
+        local CurrentIdx = 1
+        for i, opt in ipairs(Options) do if opt == DefaultOption then CurrentIdx = i end end
 
-    espBtn.MouseButton1Click:Connect(function()
-        local state = not ToxConfig:Get("Visuals", "ESP", false)
-        self:ToggleESP(state)
-        espBtn.Text = "ESP Highlight: " .. (state and "ON" or "OFF")
-        espBtn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(40, 40, 40)
-    end)
-
-    -- Botões de Seleção de Cores Rápidas (Salva Automaticamente)
-    local colorsFrame = Instance.new("Frame")
-    colorsFrame.Size = UDim2.new(1, -10, 0, 30)
-    colorsFrame.BackgroundTransparency = 1
-    colorsFrame.Parent = parentFrame
-
-    local colorList = {
-        { Name = "Vermelho", Color = Color3.fromRGB(255, 0, 0) },
-        { Name = "Verde", Color = Color3.fromRGB(0, 255, 0) },
-        { Name = "Azul", Color = Color3.fromRGB(0, 150, 255) },
-        { Name = "Amarelo", Color = Color3.fromRGB(255, 255, 0) }
-    }
-
-    for i, c in ipairs(colorList) do
-        local cBtn = Instance.new("TextButton")
-        cBtn.Size = UDim2.new(0.23, 0, 1, 0)
-        cBtn.Position = UDim2.new((i - 1) * 0.25, 0, 0, 0)
-        cBtn.BackgroundColor3 = c.Color
-        cBtn.Text = ""
-        cBtn.Parent = colorsFrame
-
-        local cCorner = Instance.new("UICorner")
-        cCorner.CornerRadius = UDim.new(0, 4)
-        cCorner.Parent = cBtn
-
-        cBtn.MouseButton1Click:Connect(function()
-            self:SetESPColor(c.Color)
+        Button.MouseButton1Click:Connect(function()
+            CurrentIdx = CurrentIdx + 1
+            if CurrentIdx > #Options then CurrentIdx = 1 end
+            Button.Text = Options[CurrentIdx]
+            Callback(Options[CurrentIdx])
+            ToxConfig:Save()
         end)
+        return Box
     end
 
-    if ToxConfig:Get("Visuals", "ESP", false) then
-        self:ToggleESP(true)
-    end
+    CreateDropdown("ESP Color", {"White", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "Orange", "Purple"}, parentPage, ToxConfig.Settings.EspColorName, function(v)
+        ToxConfig.Settings.EspColorName = v
+        ToxConfig.Settings.EspColor = ToxConfig.ColorMap[v] or Color3.fromRGB(255, 255, 255)
+        self:UpdateESP()
+    end)
 end
 
 return ToxVisuals
