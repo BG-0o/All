@@ -10,7 +10,7 @@ E.CreateButton("FE Emotes", ScriptsPage, function()
 end)
 
 E.CreateButton("Bundle Edit", ScriptsPage, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/BundleEdit?token=GHSAT0AAAAAAEEZIWW5WJZ2VEJNTVX5JP422TW5S7Q"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/BG-0o/All/refs/heads/main/BundleEdit.lua"))()
 end)
 
 E.CreateButton("Wall Walk", ScriptsPage, function()
