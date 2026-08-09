@@ -51,7 +51,7 @@ local function UpdatePlayerESP(targetPlayer)
 	local displayName = (Settings.NameType == "Display") and targetPlayer.DisplayName or targetPlayer.Name
 	local cache = ESPStorage[targetPlayer] or {}
 
-	-- BILLBOARD (NAME / HEALTH)
+	-- BILLBOARD
 	if Settings.ESP then
 		if not cache.Billboard or not cache.Billboard.Parent then
 			local BB = Instance.new("BillboardGui")
@@ -184,7 +184,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- FULLBRIGHT
+-- FULLBRIGHT (RESTAURA ILUMINAÇÃO SEM BUGS)
 local origAmbient = Lighting.Ambient
 local fullbrightConn
 local function ToggleFullbright(v)
@@ -194,6 +194,7 @@ local function ToggleFullbright(v)
         fullbrightConn = RunService.RenderStepped:Connect(function()
             if not Settings.Fullbright or env.Destroyed then
                 if fullbrightConn then fullbrightConn:Disconnect(); fullbrightConn = nil end
+                Lighting.Ambient = origAmbient
                 return
             end
             Lighting.Ambient = Color3.fromRGB(160, 160, 160)
@@ -207,7 +208,14 @@ local function ToggleFullbright(v)
     end
 end
 
--- CONSTRUÇÃO DOS ELEMENTOS DA ABA VISUALS (EXATAMENTE COMO NO SEU SCRIPT ANTIGO)
+-- FOV CHANGER (LÓGICA DINÂMICA SEM PERDER O CONTROLE)
+RunService.RenderStepped:Connect(function()
+    if not env.Destroyed and Settings.FOVEnabled then
+        workspace.CurrentCamera.FieldOfView = Settings.FOVValue
+    end
+end)
+
+-- BOTÕES DA ABA VISUALS
 CreateToggleWithValue("Enable ESP", VisualsPage, Settings.ESP, Settings.EspSize, function(v)
     Settings.ESP = v
     if not v then ClearAllESP() end
